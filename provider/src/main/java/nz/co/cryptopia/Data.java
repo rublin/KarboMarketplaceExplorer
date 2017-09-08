@@ -10,23 +10,23 @@ import com.google.gson.annotations.SerializedName;
 public class Data {
 
     @SerializedName("Buy")
-    private List<nz.co.cryptopia.Buy> mBuy;
+    private List<Buy> mBuy;
     @SerializedName("Sell")
-    private List<nz.co.cryptopia.Sell> mSell;
+    private List<Sell> mSell;
 
-    public List<nz.co.cryptopia.Buy> getBuy() {
+    public List<Buy> getBuy() {
         return mBuy;
     }
 
-    public void setBuy(List<nz.co.cryptopia.Buy> Buy) {
+    public void setBuy(List<Buy> Buy) {
         mBuy = Buy;
     }
 
-    public List<nz.co.cryptopia.Sell> getSell() {
+    public List<Sell> getSell() {
         return mSell;
     }
 
-    public void setSell(List<nz.co.cryptopia.Sell> Sell) {
+    public void setSell(List<Sell> Sell) {
         mSell = Sell;
     }
 

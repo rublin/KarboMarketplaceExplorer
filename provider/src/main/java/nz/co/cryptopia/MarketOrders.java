@@ -9,7 +9,7 @@ import com.google.gson.annotations.SerializedName;
 public class MarketOrders {
 
     @SerializedName("Data")
-    private nz.co.cryptopia.Data mData;
+    private Data mData;
     @SerializedName("Error")
     private Object mError;
     @SerializedName("Message")
@@ -17,11 +17,11 @@ public class MarketOrders {
     @SerializedName("Success")
     private Boolean mSuccess;
 
-    public nz.co.cryptopia.Data getData() {
+    public Data getData() {
         return mData;
     }
 
-    public void setData(nz.co.cryptopia.Data Data) {
+    public void setData(Data Data) {
         mData = Data;
     }
 
