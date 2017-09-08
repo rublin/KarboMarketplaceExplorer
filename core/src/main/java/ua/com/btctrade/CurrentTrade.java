@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 public class CurrentTrade {
 
     @SerializedName("currency_base")
-    private String mCurrencyBase;
+    private String currency_base;
     @SerializedName("currency_trade")
-    private String mCurrencyTrade;
+    private String currency_trade;
     @SerializedName("price")
-    private String mPrice;
+    private String price;
 }

@@ -3,50 +3,24 @@ package ua.com.btctrade;
 
 import javax.annotation.Generated;
 import com.google.gson.annotations.SerializedName;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.util.List;
+
+@Data
+@NoArgsConstructor
 @Generated("net.hexar.json2pojo")
 @SuppressWarnings("unused")
 public class TradesBuyPair {
 
     @SerializedName("list")
-    private java.util.List<ua.com.btctrade.List> mList;
+    private List<CurrentTrade> list;
     @SerializedName("max_price")
-    private String mMaxPrice;
+    private String max_price;
     @SerializedName("min_price")
-    private String mMinPrice;
+    private String min_price;
     @SerializedName("orders_sum")
-    private String mOrdersSum;
-
-    public java.util.List<ua.com.btctrade.List> getList() {
-        return mList;
-    }
-
-    public void setList(java.util.List<ua.com.btctrade.List> list) {
-        mList = list;
-    }
-
-    public String getMaxPrice() {
-        return mMaxPrice;
-    }
-
-    public void setMaxPrice(String maxPrice) {
-        mMaxPrice = maxPrice;
-    }
-
-    public String getMinPrice() {
-        return mMinPrice;
-    }
-
-    public void setMinPrice(String minPrice) {
-        mMinPrice = minPrice;
-    }
-
-    public String getOrdersSum() {
-        return mOrdersSum;
-    }
-
-    public void setOrdersSum(String ordersSum) {
-        mOrdersSum = ordersSum;
-    }
+    private String orders_sum;
 
 }
