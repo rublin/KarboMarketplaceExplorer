@@ -6,6 +6,8 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @Generated("net.hexar.json2pojo")
@@ -13,9 +15,9 @@ import lombok.NoArgsConstructor;
 public class CurrentTrade {
 
     @SerializedName("currency_base")
-    private String currency_base;
+    private BigDecimal currency_base;
     @SerializedName("currency_trade")
-    private String currency_trade;
+    private BigDecimal currency_trade;
     @SerializedName("price")
-    private String price;
+    private BigDecimal price;
 }

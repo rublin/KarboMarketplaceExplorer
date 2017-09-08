@@ -6,6 +6,7 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -17,9 +18,9 @@ public class TradesBuyPair {
     @SerializedName("list")
     private List<CurrentTrade> list;
     @SerializedName("max_price")
-    private String max_price;
+    private BigDecimal max_price;
     @SerializedName("min_price")
-    private String min_price;
+    private BigDecimal min_price;
     @SerializedName("orders_sum")
     private String orders_sum;
 
