@@ -2,6 +2,8 @@
 package ua.com.btctrade;
 
 import javax.annotation.Generated;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,13 +17,13 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class TradesBuyPair {
 
-    @SerializedName("list")
-    private List<CurrentTrade> list;
-    @SerializedName("max_price")
-    private BigDecimal max_price;
-    @SerializedName("min_price")
-    private BigDecimal min_price;
-    @SerializedName("orders_sum")
-    private String orders_sum;
+    @JsonProperty("list")
+    private List<CurrentTrade> trades;
+    @JsonProperty("max_price")
+    private BigDecimal maxPrice;
+    @JsonProperty("min_price")
+    private BigDecimal minPrice;
+    @JsonProperty("orders_sum")
+    private String ordersSum;
 
 }

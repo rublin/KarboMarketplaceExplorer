@@ -2,6 +2,8 @@
 package ua.com.btctrade;
 
 import javax.annotation.Generated;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,10 +16,10 @@ import java.math.BigDecimal;
 @SuppressWarnings("unused")
 public class CurrentTrade {
 
-    @SerializedName("currency_base")
-    private BigDecimal currency_base;
-    @SerializedName("currency_trade")
-    private BigDecimal currency_trade;
-    @SerializedName("price")
+    @JsonProperty("currency_base")
+    private BigDecimal currencyBase;
+    @JsonProperty("currency_trade")
+    private BigDecimal currencyTrade;
+    @JsonProperty("price")
     private BigDecimal price;
 }

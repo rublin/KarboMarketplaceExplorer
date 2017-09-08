@@ -2,19 +2,24 @@
 package nz.co.cryptopia;
 
 import javax.annotation.Generated;
-import com.google.gson.annotations.SerializedName;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
+import lombok.NoArgsConstructor;
+
+@lombok.Data
+@NoArgsConstructor
 @Generated("net.hexar.json2pojo")
 @SuppressWarnings("unused")
 public class MarketOrders {
 
-    @SerializedName("Data")
+    @JsonProperty("Data")
     private Data mData;
-    @SerializedName("Error")
+    @JsonProperty("Error")
     private Object mError;
-    @SerializedName("Message")
+    @JsonProperty("Message")
     private Object mMessage;
-    @SerializedName("Success")
+    @JsonProperty("Success")
     private Boolean mSuccess;
 
     public Data getData() {

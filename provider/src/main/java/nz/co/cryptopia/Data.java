@@ -3,31 +3,19 @@ package nz.co.cryptopia;
 
 import java.util.List;
 import javax.annotation.Generated;
-import com.google.gson.annotations.SerializedName;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
+import lombok.NoArgsConstructor;
+
+@lombok.Data
+@NoArgsConstructor
 @Generated("net.hexar.json2pojo")
 @SuppressWarnings("unused")
 public class Data {
 
-    @SerializedName("Buy")
+    @JsonProperty("Buy")
     private List<Buy> mBuy;
-    @SerializedName("Sell")
+    @JsonProperty("Sell")
     private List<Sell> mSell;
-
-    public List<Buy> getBuy() {
-        return mBuy;
-    }
-
-    public void setBuy(List<Buy> Buy) {
-        mBuy = Buy;
-    }
-
-    public List<Sell> getSell() {
-        return mSell;
-    }
-
-    public void setSell(List<Sell> Sell) {
-        mSell = Sell;
-    }
-
 }
