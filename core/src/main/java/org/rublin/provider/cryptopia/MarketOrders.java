@@ -1,10 +1,9 @@
 
-package nz.co.cryptopia;
+package org.rublin.provider.cryptopia;
 
 import javax.annotation.Generated;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.annotations.SerializedName;
 import lombok.NoArgsConstructor;
 
 @lombok.Data

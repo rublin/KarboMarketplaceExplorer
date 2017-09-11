@@ -1,9 +1,11 @@
+package org.rublin.provider;
+
 import lombok.extern.slf4j.Slf4j;
-import net.livecoin.OrderBook;
-import nz.co.cryptopia.MarketOrders;
+import org.rublin.provider.livecoin.OrderBook;
+import org.rublin.provider.cryptopia.MarketOrders;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import ua.com.btctrade.TradesBuyPair;
+import org.rublin.provider.btctrade.TradesBuyPair;
 
 @Slf4j
 public class Runner {

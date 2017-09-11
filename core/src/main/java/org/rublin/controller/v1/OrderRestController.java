@@ -1,4 +1,4 @@
-package rublin.org.controller.v1;
+package org.rublin.controller.v1;
 
 import org.rublin.Currency;
 import org.rublin.dto.OptimalOrdersResult;

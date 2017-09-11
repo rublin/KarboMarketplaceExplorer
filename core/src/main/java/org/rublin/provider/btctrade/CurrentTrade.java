@@ -1,10 +1,9 @@
 
-package ua.com.btctrade;
+package org.rublin.provider.btctrade;
 
 import javax.annotation.Generated;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

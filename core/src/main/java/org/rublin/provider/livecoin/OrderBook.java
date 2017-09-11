@@ -1,10 +1,9 @@
 
-package net.livecoin;
+package org.rublin.provider.livecoin;
 
 import javax.annotation.Generated;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 
 import java.util.List;
