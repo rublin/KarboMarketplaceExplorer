@@ -23,6 +23,7 @@ public class BtcTradeMarketplace implements Marketplace {
 
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
+        List<OptimalOrderDto> result = new ArrayList<>();
         RestTemplate template = new RestTemplate();
         Currency buy = pair.getBuyCurrency();
         Currency sell = pair.getSellCurrency();
@@ -39,9 +40,9 @@ public class BtcTradeMarketplace implements Marketplace {
             btcTradeResult = template.getForObject(url, TradesBuyPair.class);
         } catch (RestClientException e) {
             log.warn("{} error", e.getMessage());
+            return result;
         }
 
-        List<OptimalOrderDto> result = new ArrayList<>();
         if (btcTradeResult != null) {
             log.info("{} returns {} orders", TradePlatform.BTC_TRADE, btcTradeResult.getTrades().size());
             List<OptimalOrderDto> orders = btcTradeResult.getTrades().stream()

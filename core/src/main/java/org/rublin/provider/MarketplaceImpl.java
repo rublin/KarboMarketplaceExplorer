@@ -13,17 +13,21 @@ import java.util.List;
 @Slf4j
 @Component("marketplace")
 public class MarketplaceImpl implements Marketplace {
-    public static final String CRYPTOPIA_URL = "https://www.cryptopia.co.nz/api/GetMarketOrders/KRB_BTC";
     public static final String LIVECOIN = "https://api.livecoin.net/exchange/order_book?currencyPair=KRB/BTC";
 
     @Autowired
     @Qualifier("btc")
     private Marketplace btcTradeMarketplace;
 
+    @Autowired
+    @Qualifier("ctyptopia")
+    private Marketplace cryptopiaMarketplace;
+
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
         List<OptimalOrderDto> result = new ArrayList<>();
         result.addAll(btcTradeMarketplace.tradesByPair(pair));
+        result.addAll(cryptopiaMarketplace.tradesByPair(pair));
 
 //        log.debug("Success with {} results. Min price {}, Max price {}", result.getTrades().size(), result.getMinPrice(), result.getMaxPrice());
 //        result.getTrades().forEach(order -> log.debug("Order amount {} with price {}", order.getCurrencyTrade(), order.getPrice()));

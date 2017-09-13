@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @Generated("net.hexar.json2pojo")
@@ -16,11 +18,11 @@ public class Buy {
     @JsonProperty("Label")
     private String mLabel;
     @JsonProperty("Price")
-    private Double mPrice;
+    private BigDecimal mPrice;
     @JsonProperty("Total")
-    private Double mTotal;
+    private BigDecimal mTotal;
     @JsonProperty("TradePairId")
     private Long mTradePairId;
     @JsonProperty("Volume")
-    private Double mVolume;
+    private BigDecimal mVolume;
 }
