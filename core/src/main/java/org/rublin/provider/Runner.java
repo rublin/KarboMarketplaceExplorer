@@ -22,7 +22,9 @@ public class Runner {
         uri = "https://www.cryptopia.co.nz/api/GetMarketOrders/KRB_BTC";
         MarketOrders cryptopiaResult = template.getForObject(uri, MarketOrders.class);
 
-        log.debug("{} from cryptopia with {} results", cryptopiaResult.getSuccess() ? "success" : "fail", cryptopiaResult.getData().getMBuy().size());
+        log.debug("{} from cryptopia with {} results",
+                cryptopiaResult.getSuccess() ? "success" : "fail",
+                cryptopiaResult.getData().getBuy().size());
 
         uri = "https://api.livecoin.net/exchange/order_book?currencyPair=KRB/BTC";
 //         = null;

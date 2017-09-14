@@ -20,7 +20,7 @@ import static java.util.stream.Collectors.toList;
 @Component("ctyptopia")
 public class CryptopiaMarketplace implements Marketplace {
 
-    public static final String CRYPTOPIA_URL = "https://www.cryptopia.co.nz/api/GetMarketOrders/KRB_BTC";
+    public static final String CRYPTOPIA_URL = "https://www.cryptopia.co.nz/api/GetMarketOrders";
 
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
@@ -43,11 +43,11 @@ public class CryptopiaMarketplace implements Marketplace {
         if (cryptopiaResult != null && cryptopiaResult.getSuccess()) {
             log.info("{} returns {} buy and {} sell orders",
                     TradePlatform.CRYPTOPIA,
-                    cryptopiaResult.getData().getMBuy().size(),
-                    cryptopiaResult.getData().getMSell().size());
+                    cryptopiaResult.getData().getBuy().size(),
+                    cryptopiaResult.getData().getSell().size());
 
             if (boughtOrder) {
-                List<OptimalOrderDto> orders = cryptopiaResult.getData().getMBuy().stream()
+                List<OptimalOrderDto> orders = cryptopiaResult.getData().getBuy().stream()
                         .map(trade -> OptimalOrderDto.builder()
                                 .marketplace(TradePlatform.CRYPTOPIA.name())
                                 .amountToSale(trade.getMVolume())
@@ -57,7 +57,7 @@ public class CryptopiaMarketplace implements Marketplace {
                         .collect(toList());
                 result.addAll(orders);
             } else {
-                List<OptimalOrderDto> orders = cryptopiaResult.getData().getMBuy().stream()
+                List<OptimalOrderDto> orders = cryptopiaResult.getData().getBuy().stream()
                         .map(trade -> OptimalOrderDto.builder()
                                 .marketplace(TradePlatform.CRYPTOPIA.name())
                                 .amountToSale(trade.getMVolume())

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class Data {
 
     @JsonProperty("Buy")
-    private List<Buy> mBuy;
+    private List<Order> buy;
     @JsonProperty("Sell")
-    private List<Sell> mSell;
+    private List<Order> sell;
 }

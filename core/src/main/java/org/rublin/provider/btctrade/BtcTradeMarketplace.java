@@ -38,7 +38,7 @@ public class BtcTradeMarketplace implements Marketplace {
         try {
             log.info("Send {} req", url);
             btcTradeResult = template.getForObject(url, TradesBuyPair.class);
-        } catch (RestClientException e) {
+        } catch (Throwable e) {
             log.warn("{} error", e.getMessage());
             return result;
         }

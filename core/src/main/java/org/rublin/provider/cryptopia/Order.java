@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Generated("net.hexar.json2pojo")
 @SuppressWarnings("unused")
-public class Buy {
+public class Order {
 
     @JsonProperty("Label")
     private String mLabel;
