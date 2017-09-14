@@ -6,6 +6,7 @@ import javax.annotation.Generated;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -15,7 +16,7 @@ public class OrderBook {
 
     @JsonProperty("timestamp")
     private Long mTimestamp;
-    private List asks;
-    private List bids;
+    private List<BigDecimal[]> asks;
+    private List<BigDecimal[]> bids;
 
 }

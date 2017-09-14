@@ -13,7 +13,6 @@ import java.util.List;
 @Slf4j
 @Component("marketplace")
 public class MarketplaceImpl implements Marketplace {
-    public static final String LIVECOIN = "https://api.livecoin.net/exchange/order_book?currencyPair=KRB/BTC";
 
     @Autowired
     @Qualifier("btc")
@@ -23,11 +22,16 @@ public class MarketplaceImpl implements Marketplace {
     @Qualifier("ctyptopia")
     private Marketplace cryptopiaMarketplace;
 
+    @Autowired
+    @Qualifier("livecoin")
+    private Marketplace livecoinMarketplace;
+
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
         List<OptimalOrderDto> result = new ArrayList<>();
         result.addAll(btcTradeMarketplace.tradesByPair(pair));
         result.addAll(cryptopiaMarketplace.tradesByPair(pair));
+        result.addAll(livecoinMarketplace.tradesByPair(pair));
 
 //        log.debug("Success with {} results. Min price {}, Max price {}", result.getTrades().size(), result.getMinPrice(), result.getMaxPrice());
 //        result.getTrades().forEach(order -> log.debug("Order amount {} with price {}", order.getCurrencyTrade(), order.getPrice()));
