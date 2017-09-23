@@ -84,6 +84,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
             if (previousCommand == BotCommands.BUY_FOR_BTC) {
                 sendMessageRequest = buyCommand(message, Currency.BTC);
+                clearHistory(message.getChatId());
             } else {
                 clearHistory(message.getChatId());
                 sendMessageRequest = defaultCommand(message);
@@ -95,7 +96,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
     private SendMessage buyCommand(Message message, Currency currency) {
         String text = message.getText();
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), null);
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
         try {
             BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
             OptimalOrdersResult optimalOrders = orderService.findOptimalOrders(PairDto.builder()

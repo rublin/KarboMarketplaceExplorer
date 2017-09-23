@@ -1,5 +1,6 @@
 package org.rublin.service;
 
+import org.rublin.Currency;
 import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OptimalOrdersResult;
@@ -22,13 +23,23 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OptimalOrdersResult findOptimalOrders(PairDto pair, BigDecimal amount) {
         List<OptimalOrderDto> orders = marketplace.tradesByPair(pair);
-        Comparator<OptimalOrderDto> byRate = new Comparator<OptimalOrderDto>() {
+        Comparator<OptimalOrderDto> toSell = new Comparator<OptimalOrderDto>() {
             @Override
             public int compare(OptimalOrderDto o1, OptimalOrderDto o2) {
                 return o2.getRate().compareTo(o1.getRate());
             }
         };
-        Collections.sort(orders, byRate);
+        Comparator<OptimalOrderDto> toBuy = new Comparator<OptimalOrderDto>() {
+            @Override
+            public int compare(OptimalOrderDto o1, OptimalOrderDto o2) {
+                return o1.getRate().compareTo(o2.getRate());
+            }
+        };
+        if (pair.getBuyCurrency() == Currency.KRB) {
+            Collections.sort(orders, toBuy);
+        } else {
+            Collections.sort(orders, toSell);
+        }
         List<OptimalOrderDto> limitedOrders = new LinkedList<>();
         BigDecimal ordered = BigDecimal.ZERO;
         int i = 0;

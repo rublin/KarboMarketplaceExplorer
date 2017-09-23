@@ -51,8 +51,8 @@ public class LivecoinMarketplace implements Marketplace {
                 List<OptimalOrderDto> orders = livecoinResults.getAsks().stream()
                         .map(trade -> OptimalOrderDto.builder()
                                 .marketplace(TradePlatform.LIVECOIN.name())
-                                .amountToSale(trade[1])
-                                .amountToBuy(trade[1].divide(trade[0], BigDecimal.ROUND_HALF_UP))
+                                .amountToSale(trade[1].multiply(trade[0]))
+                                .amountToBuy(trade[1])
                                 .rate(trade[0])
                                 .build())
                         .collect(toList());

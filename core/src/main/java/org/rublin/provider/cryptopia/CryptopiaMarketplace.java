@@ -47,11 +47,11 @@ public class CryptopiaMarketplace implements Marketplace {
                     cryptopiaResult.getData().getSell().size());
 
             if (boughtOrder) {
-                List<OptimalOrderDto> orders = cryptopiaResult.getData().getBuy().stream()
+                List<OptimalOrderDto> orders = cryptopiaResult.getData().getSell().stream()
                         .map(trade -> OptimalOrderDto.builder()
                                 .marketplace(TradePlatform.CRYPTOPIA.name())
-                                .amountToSale(trade.getMVolume())
-                                .amountToBuy(trade.getMTotal())
+                                .amountToSale(trade.getMTotal())
+                                .amountToBuy(trade.getMVolume())
                                 .rate(trade.getMPrice())
                                 .build())
                         .collect(toList());
