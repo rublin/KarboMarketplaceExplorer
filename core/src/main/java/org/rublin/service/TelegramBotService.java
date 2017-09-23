@@ -2,6 +2,7 @@ package org.rublin.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.telegram.MarketplaceBot;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.ApiContextInitializer;
@@ -20,6 +21,8 @@ public class TelegramBotService {
     @Value("${telegram.token}")
     private String token;
 
+    @Autowired
+    private OrderService orderService;
     private TelegramBotsApi telegramBotsApi;
 
     @PostConstruct
@@ -27,7 +30,7 @@ public class TelegramBotService {
         ApiContextInitializer.init();
         telegramBotsApi = new TelegramBotsApi();
         try {
-            telegramBotsApi.registerBot(new MarketplaceBot(username, token));
+            telegramBotsApi.registerBot(new MarketplaceBot(orderService, username, token));
             log.info("Telegram bot register success");
         } catch (TelegramApiRequestException e) {
             log.warn("Bot registration error {}", e.getMessage());
