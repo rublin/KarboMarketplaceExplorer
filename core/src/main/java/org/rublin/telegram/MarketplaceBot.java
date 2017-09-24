@@ -130,12 +130,26 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 //        builder.append()
         builder.append(buy);
         builder.append("*\n\n");
-        for (OptimalOrderDto order : optimalOrders.getOptimalOrders()) {
-            builder.append(order.getAmountToSale()).append(sell);
-            builder.append(" -> ");
-            builder.append(order.getAmountToBuy()).append(buy);
-            builder.append(" => *").append(order.getMarketplace()).append("*\n");
+        if (optimalOrders.getOptimalOrders().size() < 80) {
+            for (OptimalOrderDto order : optimalOrders.getOptimalOrders()) {
+                builder.append(order.getAmountToSale()).append(sell);
+                builder.append(" -> ");
+                builder.append(order.getAmountToBuy()).append(buy);
+                builder.append(" => *").append(order.getMarketplace()).append("*\n");
+            }
+        } else {
+            for (int i = 0; i < 50; i++) {
+                OptimalOrderDto order = optimalOrders.getOptimalOrders().get(i);
+                builder.append(order.getAmountToSale()).append(sell);
+                builder.append(" -> ");
+                builder.append(order.getAmountToBuy()).append(buy);
+                builder.append(" => *").append(order.getMarketplace()).append("*\n");
+            }
+
+            builder.append("\n\nThere are ").append(optimalOrders.getOptimalOrders().size() - 50);
+            builder.append(" another orders");
         }
+
 
         return builder.toString();
     }
