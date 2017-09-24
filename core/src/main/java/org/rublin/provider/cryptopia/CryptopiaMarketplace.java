@@ -13,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -40,7 +41,7 @@ public class CryptopiaMarketplace implements Marketplace {
         }
 
         List<OptimalOrderDto> result = new ArrayList<>();
-        if (cryptopiaResult != null && cryptopiaResult.getSuccess()) {
+        if (Objects.nonNull(cryptopiaResult) && cryptopiaResult.getSuccess() && Objects.nonNull(cryptopiaResult.getData())) {
             log.info("{} returns {} buy and {} sell orders",
                     TradePlatform.CRYPTOPIA,
                     cryptopiaResult.getData().getBuy().size(),

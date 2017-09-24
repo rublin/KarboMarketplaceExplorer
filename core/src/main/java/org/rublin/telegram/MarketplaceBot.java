@@ -85,6 +85,9 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             if (previousCommand == BotCommands.BUY_FOR_BTC) {
                 sendMessageRequest = buyCommand(message, Currency.BTC);
                 clearHistory(message.getChatId());
+            } else if (previousCommand == BotCommands.BUY_FOR_UAH) {
+                sendMessageRequest = buyCommand(message, Currency.UAH);
+                clearHistory(message.getChatId());
             } else {
                 clearHistory(message.getChatId());
                 sendMessageRequest = defaultCommand(message);
@@ -104,8 +107,9 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                             .sellCurrency(currency)
                             .build(),
                     amount);
-            sendMessage.setText(createOrdersResponse(optimalOrders));
             sendMessage.enableMarkdown(true);
+//            sendMessage.setText("333.8251900000UAH -> 844.5777300000KRB => BTCTRADE");
+            sendMessage.setText(createOrdersResponse(optimalOrders));
         } catch (Exception e) {
             log.warn("Unexpected exception {}", e.getMessage());
             log.debug("Exception {}", e);
@@ -130,7 +134,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             builder.append(order.getAmountToSale()).append(sell);
             builder.append(" -> ");
             builder.append(order.getAmountToBuy()).append(buy);
-            builder.append(" => ").append(order.getMarketplace()).append("\n");
+            builder.append(" => *").append(order.getMarketplace()).append("*\n");
         }
 
         return builder.toString();
