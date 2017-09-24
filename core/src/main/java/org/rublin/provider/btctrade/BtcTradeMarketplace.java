@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -35,11 +36,24 @@ public class BtcTradeMarketplace implements Marketplace {
             url = url.concat("sell/").concat(buy.name()).concat("_").concat(sell.name());
         }
         TradesBuyPair btcTradeResult = null;
-        try {
-            log.info("Send {} req", url);
-            btcTradeResult = template.getForObject(url, TradesBuyPair.class);
-        } catch (Throwable e) {
-            log.warn("{} error", e.getMessage());
+        int count = 0;
+        while (Objects.isNull(btcTradeResult) && count < 3
+                ) {
+            try {
+                log.info("Send {} req", url);
+                btcTradeResult = template.getForObject(url, TradesBuyPair.class);
+            } catch (Throwable e) {
+                log.warn("{} error", e.getMessage());
+                count++;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+
+        if (Objects.isNull(btcTradeResult)) {
             return result;
         }
 

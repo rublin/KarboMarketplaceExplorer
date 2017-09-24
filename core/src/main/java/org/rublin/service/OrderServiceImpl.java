@@ -44,6 +44,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal sellAmount = BigDecimal.ZERO;
         BigDecimal boughtAmount = BigDecimal.ZERO;
         for (OptimalOrderDto order : orders) {
+            limitedOrders.add(order);
             if (sellAmount.add(order.getAmountToSale()).compareTo(amount) < 0) {
                 sellAmount = sellAmount.add(order.getAmountToSale());
                 boughtAmount = boughtAmount.add(order.getAmountToBuy());
@@ -53,7 +54,6 @@ public class OrderServiceImpl implements OrderService {
                 boughtAmount = boughtAmount.add(remainder.multiply(order.getRate()));
                 break;
             }
-            limitedOrders.add(order);
         }
 
         return OptimalOrdersResult.builder()

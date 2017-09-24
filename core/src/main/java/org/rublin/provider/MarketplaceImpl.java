@@ -8,7 +8,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Component("marketplace")
@@ -28,21 +31,11 @@ public class MarketplaceImpl implements Marketplace {
 
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
-        List<OptimalOrderDto> result = new ArrayList<>();
-        result.addAll(btcTradeMarketplace.tradesByPair(pair));
-        result.addAll(cryptopiaMarketplace.tradesByPair(pair));
-        result.addAll(livecoinMarketplace.tradesByPair(pair));
-
-//        log.debug("Success with {} results. Min price {}, Max price {}", result.getTrades().size(), result.getMinPrice(), result.getMaxPrice());
-//        result.getTrades().forEach(order -> log.debug("Order amountSell {} with price {}", order.getCurrencyTrade(), order.getPrice()));
-//
-//        uri = "https://www.cryptopia.co.nz/api/GetMarketOrders/KRB_BTC";
-//        MarketOrders cryptopiaResult = template.getForObject(uri, MarketOrders.class);
-//
-//        log.debug("{} from cryptopia with {} results", cryptopiaResult.getSuccess() ? "success" : "fail", cryptopiaResult.getData().getMBuy().size());
-//
-//        uri = "https://api.livecoin.net/exchange/order_book?currencyPair=KRB/BTC";
-//         = null;
+        List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
+        List<OptimalOrderDto> result = marketplaces.parallelStream()
+                .map(marketplace -> marketplace.tradesByPair(pair))
+                .flatMap(List::stream)
+                .collect(toList());
         return result;
     }
 
