@@ -124,11 +124,9 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         Currency buy = optimalOrders.getPair().getBuyCurrency();
         builder.append("*");
         builder.append("You sell ");
-        builder.append(optimalOrders.getAmount());
-        builder.append(sell);
+        builder.append(optimalOrders.getAmountSell()).append(sell);
         builder.append(" and buy ");
-//        builder.append()
-        builder.append(buy);
+        builder.append(optimalOrders.getAmountBuy()).append(buy);
         builder.append("*\n\n");
         if (optimalOrders.getOptimalOrders().size() < 80) {
             for (OptimalOrderDto order : optimalOrders.getOptimalOrders()) {
@@ -172,7 +170,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
     private SendMessage amount(Message message) {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), null);
-        sendMessage.setText("Type amount to buy");
+        sendMessage.setText("Type amountSell to buy");
         return sendMessage;
     }
 

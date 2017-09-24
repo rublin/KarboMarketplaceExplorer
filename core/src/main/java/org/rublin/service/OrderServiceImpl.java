@@ -41,17 +41,25 @@ public class OrderServiceImpl implements OrderService {
             Collections.sort(orders, toSell);
         }
         List<OptimalOrderDto> limitedOrders = new LinkedList<>();
-        BigDecimal ordered = BigDecimal.ZERO;
-        int i = 0;
-        while (ordered.compareTo(amount) < 0) {
-            OptimalOrderDto order = orders.get(i);
-            ordered = ordered.add(order.getAmountToSale());
+        BigDecimal sellAmount = BigDecimal.ZERO;
+        BigDecimal boughtAmount = BigDecimal.ZERO;
+        for (OptimalOrderDto order : orders) {
+            if (sellAmount.add(order.getAmountToSale()).compareTo(amount) < 0) {
+                sellAmount = sellAmount.add(order.getAmountToSale());
+                boughtAmount = boughtAmount.add(order.getAmountToBuy());
+            } else {
+                BigDecimal remainder = amount.subtract(sellAmount);
+                sellAmount = sellAmount.add(remainder);
+                boughtAmount = boughtAmount.add(remainder.multiply(order.getRate()));
+                break;
+            }
             limitedOrders.add(order);
-            i++;
         }
+
         return OptimalOrdersResult.builder()
                 .pair(pair)
-                .amount(amount)
+                .amountSell(sellAmount)
+                .amountBuy(boughtAmount)
                 .optimalOrders(limitedOrders)
                 .build();
     }

@@ -10,6 +10,7 @@ import java.util.List;
 @Builder
 public class OptimalOrdersResult {
     private PairDto pair;
-    private BigDecimal amount;
+    private BigDecimal amountSell;
+    private BigDecimal amountBuy;
     private List<OptimalOrderDto> optimalOrders;
 }

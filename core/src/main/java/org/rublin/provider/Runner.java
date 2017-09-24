@@ -17,7 +17,7 @@ public class Runner {
         TradesBuyPair result = template.getForObject(uri, TradesBuyPair.class);
 
         log.debug("Success with {} results. Min price {}, Max price {}", result.getTrades().size(), result.getMinPrice(), result.getMaxPrice());
-        result.getTrades().forEach(order -> log.debug("Order amount {} with price {}", order.getCurrencyTrade(), order.getPrice()));
+        result.getTrades().forEach(order -> log.debug("Order amountSell {} with price {}", order.getCurrencyTrade(), order.getPrice()));
 
         uri = "https://www.cryptopia.co.nz/api/GetMarketOrders/KRB_BTC";
         MarketOrders cryptopiaResult = template.getForObject(uri, MarketOrders.class);

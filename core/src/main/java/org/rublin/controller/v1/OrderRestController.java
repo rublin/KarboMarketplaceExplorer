@@ -24,7 +24,7 @@ public class OrderRestController extends AbstractController {
 
     @RequestMapping(value = "/sell", method = RequestMethod.GET)
     public OptimalOrdersResult findOptimalSellOrders(@RequestParam(value = "currency") String currency,
-                                                     @RequestParam(value = "amount") BigDecimal amount) {
+                                                     @RequestParam(value = "amountSell") BigDecimal amount) {
         PairDto pair = PairDto.builder()
                 .sellCurrency(Currency.KRB)
                 .buyCurrency(Currency.valueOf(currency.toUpperCase()))
