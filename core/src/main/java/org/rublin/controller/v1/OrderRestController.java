@@ -24,7 +24,7 @@ public class OrderRestController extends AbstractController {
 
     @RequestMapping(value = "/sell", method = RequestMethod.GET)
     public OptimalOrdersResult findOptimalSellOrders(@RequestParam(value = "currency") String currency,
-                                                     @RequestParam(value = "amountSell") BigDecimal amount) {
+                                                     @RequestParam(value = "amount") BigDecimal amount) {
         PairDto pair = PairDto.builder()
                 .sellCurrency(Currency.KRB)
                 .buyCurrency(Currency.valueOf(currency.toUpperCase()))
@@ -32,7 +32,13 @@ public class OrderRestController extends AbstractController {
         return orderService.findOptimalOrders(pair, amount);
     }
 
-    public void findOptimalBuyOrders(String currency, BigDecimal amount) {
-
+    @RequestMapping(value = "/buy", method = RequestMethod.GET)
+    public OptimalOrdersResult findOptimalBuyOrders(@RequestParam(value = "currency") String  currency,
+                                                    @RequestParam(value = "amount") BigDecimal amount) {
+        PairDto pair = PairDto.builder()
+                .sellCurrency(Currency.valueOf(currency.toUpperCase()))
+                .buyCurrency(Currency.KRB)
+                .build();
+        return orderService.findOptimalOrders(pair, amount);
     }
 }

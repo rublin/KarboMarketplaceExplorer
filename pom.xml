@@ -10,8 +10,6 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>core</module>
-        <module>bot</module>
-        <module>provider</module>
     </modules>
 
     <parent>
