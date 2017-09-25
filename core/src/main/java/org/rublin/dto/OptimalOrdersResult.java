@@ -12,5 +12,6 @@ public class OptimalOrdersResult {
     private PairDto pair;
     private BigDecimal amountSell;
     private BigDecimal amountBuy;
+    private BigDecimal averageRate;
     private List<OptimalOrderDto> optimalOrders;
 }

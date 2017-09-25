@@ -122,25 +122,32 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         StringBuilder builder = new StringBuilder();
         Currency sell = optimalOrders.getPair().getSellCurrency();
         Currency buy = optimalOrders.getPair().getBuyCurrency();
-        builder.append("*");
-        builder.append("You sell ");
-        builder.append(optimalOrders.getAmountSell()).append(sell);
-        builder.append(" and buy ");
-        builder.append(optimalOrders.getAmountBuy()).append(buy);
+//        builder.append("*");
+        builder.append("You sell *");
+        builder.append(optimalOrders.getAmountSell().toPlainString()).append(sell);
+        builder.append("*\nYou buy *");
+        builder.append(optimalOrders.getAmountBuy().toPlainString()).append(buy);
+        builder.append("*\nAverage rate *").append(optimalOrders.getAverageRate());
         builder.append("*\n\n");
+
+        builder.append("*Rate* -> *Amount to sell* -> *Amount to buy* => *Trade platform*\n");
         if (optimalOrders.getOptimalOrders().size() < 80) {
             for (OptimalOrderDto order : optimalOrders.getOptimalOrders()) {
-                builder.append(order.getAmountToSale()).append(sell);
+                builder.append(order.getRate().stripTrailingZeros().toPlainString());
                 builder.append(" -> ");
-                builder.append(order.getAmountToBuy()).append(buy);
+                builder.append(order.getAmountToSale().stripTrailingZeros().toPlainString()).append(sell);
+                builder.append(" -> ");
+                builder.append(order.getAmountToBuy().stripTrailingZeros().toPlainString()).append(buy);
                 builder.append(" => *").append(order.getMarketplace()).append("*\n");
             }
         } else {
             for (int i = 0; i < 50; i++) {
                 OptimalOrderDto order = optimalOrders.getOptimalOrders().get(i);
-                builder.append(order.getAmountToSale()).append(sell);
+                builder.append(order.getRate().stripTrailingZeros().toPlainString());
                 builder.append(" -> ");
-                builder.append(order.getAmountToBuy()).append(buy);
+                builder.append(order.getAmountToSale().stripTrailingZeros().toPlainString()).append(sell);
+                builder.append(" -> ");
+                builder.append(order.getAmountToBuy().stripTrailingZeros().toPlainString()).append(buy);
                 builder.append(" => *").append(order.getMarketplace()).append("*\n");
             }
 
@@ -176,14 +183,14 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
     private SendMessage sellCommand(Message message) {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), null);
-        sendMessage.setText("Want to sell?");
+        sendMessage.setText("Not implemented yet :(");
 
         return sendMessage;
     }
 
     private SendMessage buyCommand(Message message) {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), currencyKeyboard(Currency.BTC, Currency.UAH));
-        sendMessage.setText("Want to buy?");
+        sendMessage.setText("Select currency what you want to sell for Karbo");
 
         return sendMessage;
     }
@@ -214,7 +221,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
     private SendMessage pricePrice(Message message) {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), null);
-        sendMessage.setText("Karbo price is TO_THE_MOON");
+        sendMessage.setText("Not implemented yet :(");
         return sendMessage;
     }
 

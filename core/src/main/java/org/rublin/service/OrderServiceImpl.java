@@ -51,15 +51,16 @@ public class OrderServiceImpl implements OrderService {
             } else {
                 BigDecimal remainder = amount.subtract(sellAmount);
                 sellAmount = sellAmount.add(remainder);
-                boughtAmount = boughtAmount.add(remainder.multiply(order.getRate()));
+                boughtAmount = boughtAmount.add(remainder.divide(order.getRate(), BigDecimal.ROUND_HALF_UP));
                 break;
             }
         }
 
         return OptimalOrdersResult.builder()
                 .pair(pair)
-                .amountSell(sellAmount)
-                .amountBuy(boughtAmount)
+                .amountSell(sellAmount.stripTrailingZeros())
+                .amountBuy(boughtAmount.stripTrailingZeros())
+                .averageRate(sellAmount.divide(boughtAmount, BigDecimal.ROUND_HALF_UP).stripTrailingZeros())
                 .optimalOrders(limitedOrders)
                 .build();
     }
