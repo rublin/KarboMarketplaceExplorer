@@ -28,9 +28,8 @@ public class CryptopiaMarketplace implements Marketplace {
         RestTemplate template = new RestTemplate();
         Currency buy = pair.getBuyCurrency();
         Currency sell = pair.getSellCurrency();
-        boolean boughtOrder = buy == Currency.KRB;
 
-        String url = CRYPTOPIA_URL.concat("/KRB_").concat(boughtOrder ? sell.name() : buy.name());
+        String url = CRYPTOPIA_URL.concat("/KRB_").concat(pair.isBought() ? sell.name() : buy.name());
 
         MarketOrders cryptopiaResult = null;
         try {
@@ -47,7 +46,7 @@ public class CryptopiaMarketplace implements Marketplace {
                     cryptopiaResult.getData().getBuy().size(),
                     cryptopiaResult.getData().getSell().size());
 
-            if (boughtOrder) {
+            if (pair.isBought()) {
                 List<OptimalOrderDto> orders = cryptopiaResult.getData().getSell().stream()
                         .map(trade -> OptimalOrderDto.builder()
                                 .marketplace(TradePlatform.CRYPTOPIA.name())

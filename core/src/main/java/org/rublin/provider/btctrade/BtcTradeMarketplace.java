@@ -30,10 +30,10 @@ public class BtcTradeMarketplace implements Marketplace {
         Currency sell = pair.getSellCurrency();
 
         String url = BTC_TRADE_URL;
-        if (sell == Currency.KRB) {
-            url = url.concat("buy/").concat(sell.name()).concat("_").concat(buy.name());
-        } else {
+        if (pair.isBought()) {
             url = url.concat("sell/").concat(buy.name()).concat("_").concat(sell.name());
+        } else {
+            url = url.concat("buy/").concat(sell.name()).concat("_").concat(buy.name());
         }
         TradesBuyPair btcTradeResult = null;
         int count = 0;

@@ -28,9 +28,8 @@ public class LivecoinMarketplace implements Marketplace {
         RestTemplate template = new RestTemplate();
         Currency buy = pair.getBuyCurrency();
         Currency sell = pair.getSellCurrency();
-        boolean boughtOrder = buy == Currency.KRB;
 
-        String url = LIVECOIN.concat("KRB/").concat(boughtOrder ? sell.name() : buy.name());
+        String url = LIVECOIN.concat("KRB/").concat(pair.isBought() ? sell.name() : buy.name());
 
         OrderBook livecoinResults = null;
         try {
@@ -47,7 +46,7 @@ public class LivecoinMarketplace implements Marketplace {
                     livecoinResults.getAsks().size(),
                     livecoinResults.getBids().size());
 
-            if (boughtOrder) {
+            if (pair.isBought()) {
                 List<OptimalOrderDto> orders = livecoinResults.getAsks().stream()
                         .map(trade -> OptimalOrderDto.builder()
                                 .marketplace(TradePlatform.LIVECOIN.name())
@@ -61,8 +60,8 @@ public class LivecoinMarketplace implements Marketplace {
                 List<OptimalOrderDto> orders = livecoinResults.getBids().stream()
                         .map(trade -> OptimalOrderDto.builder()
                                 .marketplace(TradePlatform.LIVECOIN.name())
-                                .amountToSale(trade[1].multiply(trade[0]))
-                                .amountToBuy(trade[1])
+                                .amountToSale(trade[1])
+                                .amountToBuy(trade[1].multiply(trade[0]))
                                 .rate(trade[0])
                                 .build())
                         .collect(toList());

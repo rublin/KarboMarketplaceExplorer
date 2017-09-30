@@ -51,7 +51,11 @@ public class OrderServiceImpl implements OrderService {
             } else {
                 BigDecimal remainder = amount.subtract(sellAmount);
                 sellAmount = sellAmount.add(remainder);
-                boughtAmount = boughtAmount.add(remainder.divide(order.getRate(), BigDecimal.ROUND_HALF_UP));
+                if (pair.isBought()) {
+                    boughtAmount = boughtAmount.add(remainder.divide(order.getRate(), BigDecimal.ROUND_HALF_UP));
+                } else {
+                    boughtAmount = boughtAmount.add(remainder.multiply(order.getRate()));
+                }
                 break;
             }
         }
@@ -60,8 +64,15 @@ public class OrderServiceImpl implements OrderService {
                 .pair(pair)
                 .amountSell(sellAmount.stripTrailingZeros())
                 .amountBuy(boughtAmount.stripTrailingZeros())
-                .averageRate(sellAmount.divide(boughtAmount, BigDecimal.ROUND_HALF_UP).stripTrailingZeros())
+                .averageRate(rate(sellAmount, boughtAmount, pair))
                 .optimalOrders(limitedOrders)
                 .build();
+    }
+
+    private BigDecimal rate(BigDecimal sell, BigDecimal buy, PairDto pairDto) {
+        if (pairDto.isBought()) {
+            return sell.divide(buy, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
+        }
+        return buy.divide(sell, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
     }
 }

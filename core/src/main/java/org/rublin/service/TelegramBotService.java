@@ -34,6 +34,8 @@ public class TelegramBotService {
             log.info("Telegram bot register success");
         } catch (TelegramApiRequestException e) {
             log.warn("Bot registration error {}", e.getMessage());
+        } catch (Throwable throwable) {
+            log.error("Something bad happened {}", throwable.getMessage());
         }
     }
 }
