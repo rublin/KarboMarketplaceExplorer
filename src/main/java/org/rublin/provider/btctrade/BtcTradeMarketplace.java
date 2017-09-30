@@ -62,8 +62,8 @@ public class BtcTradeMarketplace implements Marketplace {
             List<OptimalOrderDto> orders = btcTradeResult.getTrades().stream()
                     .map(trade -> OptimalOrderDto.builder()
                             .marketplace(TradePlatform.BTC_TRADE.name())
-                            .amountToSale(trade.getCurrencyBase())
-                            .amountToBuy(trade.getCurrencyTrade())
+                            .amountToSale(pair.isBought() ? trade.getCurrencyBase() : trade.getCurrencyTrade())
+                            .amountToBuy(pair.isBought() ? trade.getCurrencyTrade(): trade.getCurrencyBase())
                             .rate(trade.getPrice())
                             .build())
                     .collect(toList());
