@@ -38,16 +38,4 @@ public class MarketplaceImpl implements Marketplace {
                 .collect(toList());
         return result;
     }
-
-    /*private T requestOrders(String url, T cl) {
-        RestTemplate template = new RestTemplate();
-        try {
-            OrderBook livecoinResult = template.getForObject(url, );
-            log.debug("{) results from livecoin", livecoinResult.getAsks().size());
-            livecoinResult.getAsks().forEach(ask -> log.debug("Asc {} ", ask));
-        } catch (RestClientException e) {
-            log.warn("Error from provider: {}", e.getMessage());
-        }
-        return null;
-    }*/
 }

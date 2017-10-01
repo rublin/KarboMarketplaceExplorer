@@ -23,23 +23,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OptimalOrdersResult findOptimalOrders(PairDto pair, BigDecimal amount) {
         List<OptimalOrderDto> orders = marketplace.tradesByPair(pair);
-        Comparator<OptimalOrderDto> toSell = new Comparator<OptimalOrderDto>() {
-            @Override
-            public int compare(OptimalOrderDto o1, OptimalOrderDto o2) {
-                return o2.getRate().compareTo(o1.getRate());
-            }
-        };
-        Comparator<OptimalOrderDto> toBuy = new Comparator<OptimalOrderDto>() {
-            @Override
-            public int compare(OptimalOrderDto o1, OptimalOrderDto o2) {
-                return o1.getRate().compareTo(o2.getRate());
-            }
-        };
-        if (pair.getBuyCurrency() == Currency.KRB) {
-            Collections.sort(orders, toBuy);
-        } else {
-            Collections.sort(orders, toSell);
-        }
+        sortOrders(orders, pair);
         List<OptimalOrderDto> limitedOrders = new LinkedList<>();
         BigDecimal sellAmount = BigDecimal.ZERO;
         BigDecimal boughtAmount = BigDecimal.ZERO;
@@ -69,9 +53,30 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
 
-    private BigDecimal rate(BigDecimal sell, BigDecimal buy, PairDto pairDto) {
+    protected void sortOrders(List<OptimalOrderDto> orders, PairDto pair) {
+        Comparator<OptimalOrderDto> toSell = new Comparator<OptimalOrderDto>() {
+            @Override
+            public int compare(OptimalOrderDto o1, OptimalOrderDto o2) {
+                return o2.getRate().compareTo(o1.getRate());
+            }
+        };
+        Comparator<OptimalOrderDto> toBuy = new Comparator<OptimalOrderDto>() {
+            @Override
+            public int compare(OptimalOrderDto o1, OptimalOrderDto o2) {
+                return o1.getRate().compareTo(o2.getRate());
+            }
+        };
+        if (pair.isBought()) {
+            Collections.sort(orders, toBuy);
+        } else {
+            Collections.sort(orders, toSell);
+        }
+    }
+
+    protected BigDecimal rate(BigDecimal sell, BigDecimal buy, PairDto pairDto) {
         if (pairDto.isBought()) {
-            return sell.divide(buy, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
+            BigDecimal divide = sell.divide(buy, BigDecimal.ROUND_HALF_UP);
+            return divide.stripTrailingZeros();
         }
         return buy.divide(sell, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
     }
