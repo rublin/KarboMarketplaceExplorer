@@ -1,11 +1,12 @@
 package org.rublin.service;
 
 import org.rublin.Currency;
-import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OptimalOrdersResult;
 import org.rublin.dto.PairDto;
+import org.rublin.dto.RateDto;
 import org.rublin.provider.Marketplace;
+import org.rublin.provider.cryptonator.CryptonatorRate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -13,12 +14,18 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.*;
 
+import static java.util.stream.Collectors.toList;
+
 @Service
 public class OrderServiceImpl implements OrderService {
 
     @Autowired
     @Qualifier("marketplace")
     private Marketplace marketplace;
+
+
+    @Autowired
+    private CryptonatorRate cryptonator;
 
     @Override
     public OptimalOrdersResult findOptimalOrders(PairDto pair, BigDecimal amount) {
@@ -51,6 +58,21 @@ public class OrderServiceImpl implements OrderService {
                 .averageRate(rate(sellAmount, boughtAmount, pair))
                 .optimalOrders(limitedOrders)
                 .build();
+    }
+
+    @Override
+    public RateDto getRate(Currency target) {
+        return cryptonator.krbRate(target);
+    }
+
+    @Override
+    public List<RateDto> rates() {
+        List<RateDto> resultRates = Arrays.stream(Currency.values())
+                .filter(currency -> currency != Currency.KRB)
+                .map(this::getRate)
+                .filter(Objects::nonNull)
+                .collect(toList());
+        return resultRates;
     }
 
     protected void sortOrders(List<OptimalOrderDto> orders, PairDto pair) {

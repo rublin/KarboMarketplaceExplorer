@@ -5,6 +5,7 @@ import org.rublin.Currency;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OptimalOrdersResult;
 import org.rublin.dto.PairDto;
+import org.rublin.dto.RateDto;
 import org.rublin.service.OrderService;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
@@ -63,7 +64,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
         if (text.equals(BotCommands.PRICE.name())) {
             addTOHistory(message.getChatId(), BotCommands.PRICE);
-            sendMessageRequest = pricePrice(message);
+            sendMessageRequest = price(message);
         } else if (text.equals(BotCommands.BUY.name())) {
             addTOHistory(message.getChatId(), BotCommands.BUY);
             sendMessageRequest = buyCommand(message);
@@ -116,6 +117,15 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             sendMessage.setText("Something wrong, try again");
         }
         return sendMessage;
+    }
+
+    private String createPriceResponse(List<RateDto> rates) {
+        StringBuilder builder = new StringBuilder();
+        for (RateDto rate : rates) {
+            builder.append(rate.getOrigin()).append(": ").append(rate.getRate()).append(rate.getTarget());
+            builder.append("  (").append(rate.getChange()).append(")\n");
+        }
+        return builder.toString();
     }
 
     private String createOrdersResponse(OptimalOrdersResult optimalOrders) {
@@ -219,9 +229,10 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         return keyboardMarkup;
     }
 
-    private SendMessage pricePrice(Message message) {
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), null);
-        sendMessage.setText("Not implemented yet :(");
+    private SendMessage price(Message message) {
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+        List<RateDto> rates = orderService.rates();
+        sendMessage.setText(createPriceResponse(rates));
         return sendMessage;
     }
 
