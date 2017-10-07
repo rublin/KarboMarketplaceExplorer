@@ -87,7 +87,6 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             addTOHistory(message.getChatId(), BotCommands.valueOf("SELL_FOR_".concat(currency.name())));
             sendMessageRequest = amount(message, Currency.KRB);
         } else {
-
             if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("BUY_FOR_")) {
                 String currencyStr = previousCommand.toString().substring(8);
                 log.info("Received BUY request for {} currency and {} amount", currencyStr, text);
@@ -254,7 +253,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                         Currency.UAH,
                         Currency.RUR,
                         Currency.USD));
-        sendMessage.setText("Select currency what you want to buy for Karbo");
+        sendMessage.setText("Select currency what you want to convert with Karbo");
 
         return sendMessage;
     }
@@ -266,7 +265,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                         Currency.UAH,
                         Currency.RUR,
                         Currency.USD));
-        sendMessage.setText("Select currency what you want to sell for Karbo");
+        sendMessage.setText("Select currency what you want to convert with Karbo");
 
         return sendMessage;
     }
