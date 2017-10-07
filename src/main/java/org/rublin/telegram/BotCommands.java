@@ -1,6 +1,7 @@
 package org.rublin.telegram;
 
 public enum BotCommands {
+    INFO,
     PRICE,
     SELL,
     BUY,

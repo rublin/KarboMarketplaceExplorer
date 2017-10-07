@@ -63,7 +63,11 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         BotCommands previousCommand = Objects.nonNull(commands) && !commands.isEmpty() ? commands.getLast() : null;
 
         Currency currency = Currency.getCurrency(text);
-        if (text.equals(BotCommands.PRICE.name())) {
+        if (text.equals("/START")) {
+            sendMessageRequest = start(message);
+        } else if (text.equals(BotCommands.INFO.name())) {
+            sendMessageRequest = info(message);
+        } else if (text.equals(BotCommands.PRICE.name())) {
             addTOHistory(message.getChatId(), BotCommands.PRICE);
             sendMessageRequest = price(message);
         } else if (text.equals(BotCommands.BUY.name())) {
@@ -76,12 +80,12 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 && Objects.nonNull(previousCommand)
                 && previousCommand == BotCommands.BUY) {
             addTOHistory(message.getChatId(), BotCommands.valueOf("BUY_FOR_".concat(currency.name())));
-            sendMessageRequest = amount(message);
+            sendMessageRequest = amount(message, currency);
         } else if (Objects.nonNull(currency)
                 && Objects.nonNull(previousCommand)
                 && previousCommand == BotCommands.SELL) {
             addTOHistory(message.getChatId(), BotCommands.valueOf("SELL_FOR_".concat(currency.name())));
-            sendMessageRequest = amount(message);
+            sendMessageRequest = amount(message, currency);
         } else {
 
             if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("BUY_FOR_")) {
@@ -92,7 +96,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             } else if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("SELL_FOR_")) {
                 String currencyStr = previousCommand.toString().substring(9);
                 log.info("Received BUY request for {} currency and {} amount", currencyStr, text);
-                sendMessageRequest = buyCommand(message, Currency.UAH);
+                sendMessageRequest = sellCommand(message, Currency.UAH);
                 clearHistory(message.getChatId());
             } else {
                 clearHistory(message.getChatId());
@@ -103,6 +107,28 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         sendMessage(sendMessageRequest);
     }
 
+    private SendMessage info(Message message) {
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+        StringBuilder builder = new StringBuilder();
+        builder.append("*Price* will return [Karbo](http://karbowanec.com/en/) price to other currencies\n");
+        builder.append("*Sell* will return optimal sell orders\n");
+        builder.append("*Buy* will return optimal buy orders\n\n");
+        builder.append("Source code is available [here](https://github.com/rublin/KarboMarketplaceExplorer)\n\n");
+        builder.append("Address for donate: \n*KaAxHCPtJaFGDq4xLn3fASf3zVrAmqyE4359zn3r3deVjCeM3CYq7K4Y1pkfZkjfRd1W2VPXVZdA5RBdpc4Vzamo1H4F5qZ*");
+        sendMessage.setText(builder.toString());
+        return sendMessage;
+    }
+
+    private SendMessage start(Message message) {
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+        sendMessage.enableMarkdown(true);
+        StringBuilder builder = new StringBuilder();
+        builder.append("Hello, *").append(message.getFrom().getFirstName()).append("*\n\n");
+        builder.append("You are welcomed by the *Karbo marketplace bot*");
+        sendMessage.setText(builder.toString());
+        return sendMessage;
+    }
+
     private SendMessage buyCommand(Message message, Currency currency) {
         String text = message.getText();
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
@@ -111,6 +137,27 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             OptimalOrdersResult optimalOrders = orderService.findOptimalOrders(PairDto.builder()
                             .buyCurrency(Currency.KRB)
                             .sellCurrency(currency)
+                            .build(),
+                    amount);
+            sendMessage.enableMarkdown(true);
+//            sendMessage.setText("333.8251900000UAH -> 844.5777300000KRB => BTCTRADE");
+            sendMessage.setText(createOrdersResponse(optimalOrders));
+        } catch (Exception e) {
+            log.warn("Unexpected exception {}", e.getMessage());
+            log.debug("Exception {}", e);
+            sendMessage.setText("Something wrong, try again");
+        }
+        return sendMessage;
+    }
+
+    private SendMessage sellCommand(Message message, Currency currency) {
+        String text = message.getText();
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+        try {
+            BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
+            OptimalOrdersResult optimalOrders = orderService.findOptimalOrders(PairDto.builder()
+                            .buyCurrency(currency)
+                            .sellCurrency(Currency.KRB)
                             .build(),
                     amount);
             sendMessage.enableMarkdown(true);
@@ -194,15 +241,20 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         }
     }
 
-    private SendMessage amount(Message message) {
+    private SendMessage amount(Message message, Currency currency) {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), null);
-        sendMessage.setText("Type amountSell to buy");
+        sendMessage.setText("Type amount of ".concat(currency.name()));
         return sendMessage;
     }
 
     private SendMessage sellCommand(Message message) {
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), null);
-        sendMessage.setText("Not implemented yet :(");
+        SendMessage sendMessage = createSendMessage(message.getChatId(),
+                message.getMessageId(),
+                currencyKeyboard(Currency.BTC,
+                        Currency.UAH,
+                        Currency.RUR,
+                        Currency.USD));
+        sendMessage.setText("Select currency what you want to buy for Karbo");
 
         return sendMessage;
     }
@@ -275,22 +327,14 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         List<KeyboardRow> keyboard = new ArrayList<>();
         // Create a keyboard row
         KeyboardRow row = new KeyboardRow();
-        KeyboardButton button = new KeyboardButton();
-        button.setText("Sell");
-        // Set each button, you can also use KeyboardButton objects if you need something else than text
-        row.add(button);
+        row.add("Sell");
         row.add("Price");
         row.add("Buy");
         // Add the first row to the keyboard
         keyboard.add(row);
-        // Create another keyboard row
-//                row = new KeyboardRow();
-//                // Set each button for the second line
-//                row.add("Row 2 Button 1");
-//                row.add("Row 2 Button 2");
-//                row.add("Row 2 Button 3");
-//                // Add the second row to the keyboard
-//                keyboard.add(row);
+        row = new KeyboardRow();
+        row.add("Info");
+        keyboard.add(row);
         // Set the keyboard to the markup
         keyboardMarkup.setKeyboard(keyboard);
         // Add it to the message
