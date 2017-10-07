@@ -85,7 +85,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 && Objects.nonNull(previousCommand)
                 && previousCommand == BotCommands.SELL) {
             addTOHistory(message.getChatId(), BotCommands.valueOf("SELL_FOR_".concat(currency.name())));
-            sendMessageRequest = amount(message, currency);
+            sendMessageRequest = amount(message, Currency.KRB);
         } else {
 
             if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("BUY_FOR_")) {
@@ -96,7 +96,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             } else if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("SELL_FOR_")) {
                 String currencyStr = previousCommand.toString().substring(9);
                 log.info("Received BUY request for {} currency and {} amount", currencyStr, text);
-                sendMessageRequest = sellCommand(message, Currency.UAH);
+                sendMessageRequest = sellCommand(message, Currency.valueOf(currencyStr));
                 clearHistory(message.getChatId());
             } else {
                 clearHistory(message.getChatId());
