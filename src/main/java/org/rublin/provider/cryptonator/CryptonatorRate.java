@@ -7,8 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -33,7 +31,7 @@ public class CryptonatorRate {
                     .origin(Currency.valueOf(t.getBase()))
                     .target(Currency.valueOf(t.getTarget()))
                     .rate(t.getPrice())
-                    .change(t.getChange())
+                    .change(t.getChange().stripTrailingZeros())
                     .build();
         }
         return null;

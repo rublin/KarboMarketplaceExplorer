@@ -62,6 +62,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         LinkedList<BotCommands> commands = commandsHistory.get(message.getChatId());
         BotCommands previousCommand = Objects.nonNull(commands) && !commands.isEmpty() ? commands.getLast() : null;
 
+        Currency currency = Currency.getCurrency(text);
         if (text.equals(BotCommands.PRICE.name())) {
             addTOHistory(message.getChatId(), BotCommands.PRICE);
             sendMessageRequest = price(message);
@@ -71,22 +72,26 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         } else if (text.equals(BotCommands.SELL.name())) {
             addTOHistory(message.getChatId(), BotCommands.SELL);
             sendMessageRequest = sellCommand(message);
-        } else if (BotCommands.BUY_FOR_BTC.name().contains(text)
+        } else if (Objects.nonNull(currency)
                 && Objects.nonNull(previousCommand)
                 && previousCommand == BotCommands.BUY) {
-            addTOHistory(message.getChatId(), BotCommands.BUY_FOR_BTC);
+            addTOHistory(message.getChatId(), BotCommands.valueOf("BUY_FOR_".concat(currency.name())));
             sendMessageRequest = amount(message);
-        } else if (BotCommands.BUY_FOR_UAH.name().contains(text)
+        } else if (Objects.nonNull(currency)
                 && Objects.nonNull(previousCommand)
-                && previousCommand == BotCommands.BUY) {
-            addTOHistory(message.getChatId(), BotCommands.BUY_FOR_UAH);
+                && previousCommand == BotCommands.SELL) {
+            addTOHistory(message.getChatId(), BotCommands.valueOf("SELL_FOR_".concat(currency.name())));
             sendMessageRequest = amount(message);
         } else {
 
-            if (previousCommand == BotCommands.BUY_FOR_BTC) {
-                sendMessageRequest = buyCommand(message, Currency.BTC);
+            if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("BUY_FOR_")) {
+                String currencyStr = previousCommand.toString().substring(8);
+                log.info("Received BUY request for {} currency and {} amount", currencyStr, text);
+                sendMessageRequest = buyCommand(message, Currency.valueOf(currencyStr));
                 clearHistory(message.getChatId());
-            } else if (previousCommand == BotCommands.BUY_FOR_UAH) {
+            } else if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("SELL_FOR_")) {
+                String currencyStr = previousCommand.toString().substring(9);
+                log.info("Received BUY request for {} currency and {} amount", currencyStr, text);
                 sendMessageRequest = buyCommand(message, Currency.UAH);
                 clearHistory(message.getChatId());
             } else {
@@ -122,8 +127,12 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private String createPriceResponse(List<RateDto> rates) {
         StringBuilder builder = new StringBuilder();
         for (RateDto rate : rates) {
-            builder.append(rate.getOrigin()).append(": ").append(rate.getRate()).append(rate.getTarget());
-            builder.append("  (").append(rate.getChange()).append(")\n");
+            builder.append(rate.getOrigin())
+                    .append(": ")
+                    .append(rate.getRate().stripTrailingZeros())
+                    .append("*")
+                    .append(rate.getTarget());
+            builder.append("*  (").append(rate.getChange().toPlainString()).append(")\n");
         }
         return builder.toString();
     }
@@ -199,7 +208,12 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     }
 
     private SendMessage buyCommand(Message message) {
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), currencyKeyboard(Currency.BTC, Currency.UAH));
+        SendMessage sendMessage = createSendMessage(message.getChatId(),
+                message.getMessageId(),
+                currencyKeyboard(Currency.BTC,
+                        Currency.UAH,
+                        Currency.RUR,
+                        Currency.USD));
         sendMessage.setText("Select currency what you want to sell for Karbo");
 
         return sendMessage;
