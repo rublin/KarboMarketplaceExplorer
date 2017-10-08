@@ -23,14 +23,19 @@ public class AbstractProviderTest {
         if (pair.getBuyCurrency() == Currency.UAH) {
             assertTrue(firstOrder.getAmountToSale()
                     .compareTo(firstOrder.getAmountToBuy()) < 0);
+            assertEquals(firstOrder.getRate().stripTrailingZeros(), firstOrder.getAmountToBuy()
+                    .divide(firstOrder.getAmountToSale(),
+                            2,
+                            BigDecimal.ROUND_HALF_UP).stripTrailingZeros());
         } else {
             assertTrue(firstOrder.getAmountToSale()
                     .compareTo(firstOrder.getAmountToBuy()) > 0);
+            assertEquals(firstOrder.getRate().stripTrailingZeros(), firstOrder.getAmountToBuy()
+                    .divide(firstOrder.getAmountToSale(),
+                            BigDecimal.ROUND_HALF_UP).stripTrailingZeros());
         }
         assertEquals(firstOrder.getMarketplace(), platform.name());
-        assertEquals(firstOrder.getRate().stripTrailingZeros(), firstOrder.getAmountToBuy()
-                .divide(firstOrder.getAmountToSale(),
-                        BigDecimal.ROUND_HALF_UP).stripTrailingZeros());
+
     }
 
     public void buy(List<OptimalOrderDto> orders, TradePlatform platform, PairDto pair)  {
@@ -40,13 +45,18 @@ public class AbstractProviderTest {
         if (pair.getSellCurrency() == Currency.UAH) {
             assertTrue(firstOrder.getAmountToBuy()
                     .compareTo(firstOrder.getAmountToSale()) < 0);
+            assertEquals(firstOrder.getRate().stripTrailingZeros(), firstOrder.getAmountToSale()
+                    .divide(firstOrder.getAmountToBuy(),
+                            2,
+                            BigDecimal.ROUND_HALF_UP).stripTrailingZeros());
         } else {
             assertTrue(firstOrder.getAmountToBuy()
                     .compareTo(firstOrder.getAmountToSale()) > 0);
+            assertEquals(firstOrder.getRate().stripTrailingZeros(), firstOrder.getAmountToSale()
+                    .divide(firstOrder.getAmountToBuy(),
+                            BigDecimal.ROUND_HALF_UP).stripTrailingZeros());
         }
         assertEquals(firstOrder.getMarketplace(), platform.name());
-        assertEquals(firstOrder.getRate().stripTrailingZeros(), firstOrder.getAmountToSale()
-                .divide(firstOrder.getAmountToBuy(),
-                        BigDecimal.ROUND_HALF_UP).stripTrailingZeros());
+
     }
 }

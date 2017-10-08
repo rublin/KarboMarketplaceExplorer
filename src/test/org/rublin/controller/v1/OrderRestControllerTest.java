@@ -2,6 +2,7 @@ package org.rublin.controller.v1;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.rublin.Main;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.junit.Assert.*;
 
+@Ignore
 @SpringBootTest(classes = Main.class)
 @WebAppConfiguration
 public class OrderRestControllerTest {
