@@ -103,7 +103,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             }
         }
 
-        sendMessage(sendMessageRequest);
+        execute(sendMessageRequest);
     }
 
     private SendMessage info(Message message) {
