@@ -10,6 +10,7 @@ import org.rublin.service.OrderService;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
+import org.telegram.telegrambots.api.objects.User;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardButton;
@@ -19,6 +20,9 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class MarketplaceBot extends TelegramLongPollingBot {
@@ -28,12 +32,36 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private OrderService orderService;
 
     private Map<Long, LinkedList<BotCommands>> commandsHistory = new HashMap<>();
-
+    private ConcurrentMap<Integer, User> usersById = new ConcurrentHashMap<>();
+    private ConcurrentMap<Long, User> chatToUser = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, Integer> statistic = new ConcurrentHashMap<>();
 
     public MarketplaceBot(OrderService orderService, String username, String token) {
         this.orderService = orderService;
         this.username = username;
         this.token = token;
+    }
+
+    public void sendCustomMessage(String message) {
+        for (ConcurrentMap.Entry entry : chatToUser.entrySet()) {
+            Long chatId = (Long) entry.getKey();
+
+            User user = (User) entry.getValue();
+            String name = user.getFirstName() == null ? user.getUserName() : user.getFirstName();
+            name = name == null ? "anonymous user" : name;
+            SendMessage sendMessage = createSendMessage(chatId);
+            sendMessage.enableMarkdown(true);
+            sendMessage.setText(String.format("Hi, *%s*!\n\n%s", name, message));
+            doExecute(sendMessage);
+        }
+    }
+
+    private void doExecute(SendMessage sendMessage) {
+        try {
+            this.execute(sendMessage);
+        } catch (TelegramApiException e) {
+            log.error("Execute error {}", e.getMessage());
+        }
     }
 
     @Override
@@ -43,6 +71,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             try {
                 if (update.hasMessage()) {
                     Message message = update.getMessage();
+                    processUserInformation(message.getChatId(), message.getFrom());
                     if (message.hasText() || message.hasLocation()) {
                         handleIncomingMessage(message);
                     }
@@ -51,6 +80,18 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 log.error("Telegram error {} when update received", e.getMessage());
                 log.debug("onUpdateReceived exception: {}", e);
             }
+        }
+    }
+
+    private void processUserInformation(Long chatId, User user) {
+        Integer id = user.getId();
+        usersById.putIfAbsent(id, user);
+        chatToUser.putIfAbsent(chatId, user);
+        Integer count = statistic.getOrDefault(id, null);
+        if (Objects.isNull(count)) {
+            statistic.put(id, 1);
+        } else {
+            statistic.put(id, ++count);
         }
     }
 
@@ -103,7 +144,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             }
         }
 
-        execute(sendMessageRequest);
+        doExecute(sendMessageRequest);
     }
 
     private SendMessage info(Message message) {
@@ -309,11 +350,16 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     }
 
     private SendMessage createSendMessage(Long chatId, Integer messageId, ReplyKeyboard keyboard) {
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId);
+        SendMessage message = createSendMessage(chatId);
         message.setReplyToMessageId(messageId);
         message.setReplyMarkup(keyboard);
         message.enableMarkdown(Objects.nonNull(keyboard));
+        return message;
+    }
+
+    private SendMessage createSendMessage(Long chatId) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
         return message;
     }
 

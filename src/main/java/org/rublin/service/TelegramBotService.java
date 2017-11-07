@@ -21,16 +21,23 @@ public class TelegramBotService {
     @Value("${telegram.token}")
     private String token;
 
+    private MarketplaceBot bot;
+
     @Autowired
     private OrderService orderService;
     private TelegramBotsApi telegramBotsApi;
+
+    public void sendMessage(String message) {
+        bot.sendCustomMessage(message);
+    }
 
     @PostConstruct
     public void registerBot() {
         ApiContextInitializer.init();
         telegramBotsApi = new TelegramBotsApi();
         try {
-            telegramBotsApi.registerBot(new MarketplaceBot(orderService, username, token));
+            bot = new MarketplaceBot(orderService, username, token);
+            telegramBotsApi.registerBot(bot);
             log.info("Telegram bot register success");
         } catch (TelegramApiRequestException e) {
             log.warn("Bot registration error {}", e.getMessage());
