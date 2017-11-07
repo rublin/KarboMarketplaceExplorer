@@ -21,10 +21,10 @@ public class AbstractProviderTest {
         if (pair.getBuyCurrency() == Currency.UAH) {
             assertTrue(firstOrder.getAmountToSale()
                     .compareTo(firstOrder.getAmountToBuy()) < 0);
-            assertEquals(firstOrder.getRate().stripTrailingZeros(), firstOrder.getAmountToBuy()
+            assertEquals(firstOrder.getRate().stripTrailingZeros().doubleValue(), firstOrder.getAmountToBuy()
                     .divide(firstOrder.getAmountToSale(),
                             2,
-                            BigDecimal.ROUND_HALF_UP).stripTrailingZeros());
+                            BigDecimal.ROUND_HALF_UP).stripTrailingZeros().doubleValue(), 2);
         } else {
             assertTrue(firstOrder.getAmountToSale()
                     .compareTo(firstOrder.getAmountToBuy()) > 0);
