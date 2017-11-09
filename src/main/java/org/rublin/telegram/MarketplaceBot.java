@@ -6,6 +6,8 @@ import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OptimalOrdersResult;
 import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
+import org.rublin.model.TelegramUser;
+import org.rublin.repository.TelegramUserRepository;
 import org.rublin.service.OrderService;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
@@ -18,11 +20,16 @@ import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
+import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class MarketplaceBot extends TelegramLongPollingBot {
@@ -30,16 +37,27 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private String username;
     private String token;
     private OrderService orderService;
+    private TelegramUserRepository repository;
 
     private Map<Long, LinkedList<BotCommands>> commandsHistory = new HashMap<>();
-    private ConcurrentMap<Integer, User> usersById = new ConcurrentHashMap<>();
-    private ConcurrentMap<Long, User> chatToUser = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, TelegramUser> usersById = new ConcurrentHashMap<>();
+    private ConcurrentMap<Long, TelegramUser> chatToUser = new ConcurrentHashMap<>();
     private ConcurrentMap<Integer, Integer> statistic = new ConcurrentHashMap<>();
 
-    public MarketplaceBot(OrderService orderService, String username, String token) {
+    public MarketplaceBot(OrderService orderService, TelegramUserRepository repository, String username, String token) {
         this.orderService = orderService;
         this.username = username;
         this.token = token;
+        this.repository = repository;
+        init();
+    }
+
+    private void init() {
+        List<TelegramUser> telegramUsers = repository.findAll();
+        telegramUsers.forEach(u -> {
+            usersById.put(u.getId(), u);
+            chatToUser.put(u.getChatId(), u);
+        });
     }
 
     public void sendCustomMessage(String message) {
@@ -85,8 +103,19 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
     private void processUserInformation(Long chatId, User user) {
         Integer id = user.getId();
-        usersById.putIfAbsent(id, user);
-        chatToUser.putIfAbsent(chatId, user);
+        TelegramUser userFromMap = usersById.getOrDefault(id, null);
+        if (Objects.isNull(userFromMap)) {
+            TelegramUser telegramUser = TelegramUser.builder()
+                    .id(id)
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .userName(user.getUserName())
+                    .chatId(chatId)
+                    .build();
+            repository.save(telegramUser);
+            usersById.putIfAbsent(id, telegramUser);
+            chatToUser.putIfAbsent(chatId, telegramUser);
+        }
         Integer count = statistic.getOrDefault(id, null);
         if (Objects.isNull(count)) {
             statistic.put(id, 1);
