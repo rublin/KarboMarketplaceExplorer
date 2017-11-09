@@ -6,13 +6,13 @@ import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
 import org.rublin.provider.Marketplace;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import javax.annotation.PostConstruct;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
@@ -22,6 +22,17 @@ public class BtcTradeMarketplace implements Marketplace {
 
     public static final String BTC_TRADE_URL = "https://btc-trade.com.ua/api/trades/";
 
+    @Value("${provider.btc-trade.pair}")
+    private String pairString;
+
+    private List<String> btctradePair;
+
+    @PostConstruct
+    private void init() {
+        String[] pairArray = pairString.split(",");
+        btctradePair = Arrays.asList(pairArray);
+    }
+
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
         List<OptimalOrderDto> result = new ArrayList<>();
@@ -29,11 +40,17 @@ public class BtcTradeMarketplace implements Marketplace {
         Currency buy = pair.getBuyCurrency();
         Currency sell = pair.getSellCurrency();
 
+        Optional<String> supportedPair = btctradePair.stream()
+                .filter(s -> s.contains(buy.name()) && s.contains(sell.name()))
+                .findFirst();
+        if (!supportedPair.isPresent()) {
+            return result;
+        }
         String url = BTC_TRADE_URL;
         if (pair.isBought()) {
-            url = url.concat("sell/").concat(buy.name()).concat("_").concat(sell.name());
+            url = url.concat("sell/").concat(supportedPair.get());
         } else {
-            url = url.concat("buy/").concat(sell.name()).concat("_").concat(buy.name());
+            url = url.concat("buy/").concat(supportedPair.get());
         }
         TradesBuyPair btcTradeResult = null;
         int count = 0;
