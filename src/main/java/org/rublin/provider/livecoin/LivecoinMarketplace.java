@@ -7,13 +7,17 @@ import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
 import org.rublin.provider.Marketplace;
 import org.rublin.provider.cryptopia.MarketOrders;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 
@@ -23,13 +27,31 @@ public class LivecoinMarketplace implements Marketplace {
 
     public static final String LIVECOIN = "https://api.livecoin.net/exchange/order_book?currencyPair=";
 
+    @Value("${provider.livecoin.pair}")
+    private String pairString;
+
+    private List<String> livecoinPair;
+
+    @PostConstruct
+    private void init() {
+        String[] pairArray = pairString.split(",");
+        livecoinPair = Arrays.asList(pairArray);
+    }
+
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
+        List<OptimalOrderDto> result = new ArrayList<>();
         RestTemplate template = new RestTemplate();
         Currency buy = pair.getBuyCurrency();
         Currency sell = pair.getSellCurrency();
 
-        String url = LIVECOIN.concat("KRB/").concat(pair.isBought() ? sell.name() : buy.name());
+        Optional<String> supportedPair = livecoinPair.stream()
+                .filter(s -> s.contains(buy.name()) && s.contains(sell.name()))
+                .findFirst();
+        if (!supportedPair.isPresent()) {
+            return result;
+        }
+        String url = LIVECOIN.concat(supportedPair.get());
 
         OrderBook livecoinResults = null;
         try {
@@ -39,7 +61,6 @@ public class LivecoinMarketplace implements Marketplace {
             log.warn("{} error", e.getMessage());
         }
 
-        List<OptimalOrderDto> result = new ArrayList<>();
         if (livecoinResults != null) {
             log.info("{} returns {} buy and {} sell orders",
                     TradePlatform.LIVECOIN,
