@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap сайт</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="navbar">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                <a class="navbar-barand" href="#">LOGO</a>
+            </div>
+            <div class="container">
+                <div class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right nav-pills">
+                        <li><a href="#">Somethings</a></li>
+                        <li><a href="http://karbowanec.com/">karbowanec.com</a></li>
+                        <li><a href="#">GitHub Repository</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-sx-12 col-lg-7">
+                <canvas id="myChart"></canvas>
+            </div>
+            <div class="col-sx-12 col-lg-5">
+                <h3>Enter your data:</h3>
+                <form>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <div class="input-group-btn" style="width: auto;">
+                                <select class="form-control">
+                                    <option>Sale</option>
+                                    <option>Bay</option>
+                                </select>
+                            </div>
+                            <input class="form-control" type="text" placeholder="Amount">
+                            <div class="input-group-btn" style="width: auto; min-width: 90px;">
+                                <select class="form-control">
+                                    <option>KRB</option>
+                                    <option>BTC</option>
+                                </select>
+                            </div>
+                            <div class="input-group-btn" style="width: auto; min-width: 80px;">
+                                <input class="btn btn-primary" type="button" value="Send">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="index.js"></script>
+</body>
+
+</html>
