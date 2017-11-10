@@ -3,6 +3,8 @@ package org.rublin;
 public enum Currency {
     KRB,
     BTC,
+    LTC,
+    DOGE,
     UAH,
     USD,
     RUR;
