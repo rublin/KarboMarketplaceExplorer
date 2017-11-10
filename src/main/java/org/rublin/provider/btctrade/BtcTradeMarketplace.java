@@ -36,7 +36,6 @@ public class BtcTradeMarketplace implements Marketplace {
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
         List<OptimalOrderDto> result = new ArrayList<>();
-        RestTemplate template = new RestTemplate();
         Currency buy = pair.getBuyCurrency();
         Currency sell = pair.getSellCurrency();
 
@@ -46,12 +45,42 @@ public class BtcTradeMarketplace implements Marketplace {
         if (!supportedPair.isPresent()) {
             return result;
         }
-        String url = BTC_TRADE_URL;
-        if (pair.isBought()) {
-            url = url.concat("sell/").concat(supportedPair.get());
-        } else {
-            url = url.concat("buy/").concat(supportedPair.get());
+
+        List<String> urls = createUrl(supportedPair.get(), pair);
+        List<TradesBuyPair> pairList = urls.stream()
+                .map(this::tradePairs)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(toList());
+
+
+        if (pairList.isEmpty()) {
+            return result;
         }
+
+        result.addAll(convertToOptimalOrders(pairList, pair));
+        return result;
+    }
+
+    private List<OptimalOrderDto> convertToOptimalOrders(List<TradesBuyPair> pairList, PairDto pair) {
+        List<OptimalOrderDto> result = new ArrayList<>();
+        /*if (btcTradeResult != null) {
+            log.info("{} returns {} orders", TradePlatform.BTC_TRADE, btcTradeResult.getTrades().size());
+            List<OptimalOrderDto> orders = btcTradeResult.getTrades().stream()
+                    .map(trade -> OptimalOrderDto.builder()
+                            .marketplace(TradePlatform.BTC_TRADE.name())
+                            .amountToSale(pair.isBought() ? trade.getCurrencyBase() : trade.getCurrencyTrade())
+                            .amountToBuy(pair.isBought() ? trade.getCurrencyTrade(): trade.getCurrencyBase())
+                            .rate(trade.getPrice())
+                            .build())
+                    .collect(toList());
+            result.addAll(orders);
+        }*/
+        return result;
+    }
+
+    private Optional<TradesBuyPair> tradePairs(String url) {
+        RestTemplate template = new RestTemplate();
         TradesBuyPair btcTradeResult = null;
         int count = 0;
         while (Objects.isNull(btcTradeResult) && count < 3
@@ -70,22 +99,16 @@ public class BtcTradeMarketplace implements Marketplace {
             }
         }
 
-        if (Objects.isNull(btcTradeResult)) {
-            return result;
-        }
+        return Optional.ofNullable(btcTradeResult);
+    }
 
-        if (btcTradeResult != null) {
-            log.info("{} returns {} orders", TradePlatform.BTC_TRADE, btcTradeResult.getTrades().size());
-            List<OptimalOrderDto> orders = btcTradeResult.getTrades().stream()
-                    .map(trade -> OptimalOrderDto.builder()
-                            .marketplace(TradePlatform.BTC_TRADE.name())
-                            .amountToSale(pair.isBought() ? trade.getCurrencyBase() : trade.getCurrencyTrade())
-                            .amountToBuy(pair.isBought() ? trade.getCurrencyTrade(): trade.getCurrencyBase())
-                            .rate(trade.getPrice())
-                            .build())
-                    .collect(toList());
-            result.addAll(orders);
+    private List<String> createUrl(String supportedPair, PairDto pair) {
+        String[] split = supportedPair.split(">");
+        List<String> urls = new ArrayList<>(split.length);
+        for (String s : split) {
+            String url = BTC_TRADE_URL.concat(s.contains(pair.getSellCurrency().name()) ? "/buy/" : "/sell/").concat(s);
+            urls.add(url);
         }
-        return result;
+        return urls;
     }
 }
