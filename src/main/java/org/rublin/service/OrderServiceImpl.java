@@ -1,5 +1,6 @@
 package org.rublin.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OptimalOrdersResult;
@@ -13,9 +14,13 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
+@Slf4j
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -23,13 +28,49 @@ public class OrderServiceImpl implements OrderService {
     @Qualifier("marketplace")
     private Marketplace marketplace;
 
+    private static final long TIMEOUT_SECONDS = 5;
+    @Autowired
+    @Qualifier("btc")
+    private Marketplace btcTradeMarketplace;
+
+    @Autowired
+    @Qualifier("ctyptopia")
+    private Marketplace cryptopiaMarketplace;
+
+    @Autowired
+    @Qualifier("livecoin")
+    private Marketplace livecoinMarketplace;
 
     @Autowired
     private CryptonatorRate cryptonator;
 
+    private List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
+
     @Override
     public OptimalOrdersResult findOptimalOrders(PairDto pair, BigDecimal amount) {
-        List<OptimalOrderDto> orders = marketplace.tradesByPair(pair);
+        List<Marketplace> singleReq = new ArrayList<>();
+        List<Marketplace> doubleRequest = new ArrayList<>();
+        for (Marketplace m : marketplaces) {
+            boolean sale = false;
+            boolean buy = false;
+            for (String s : m.getAvailablePairs()) {
+                if (s.contains(pair.getSellCurrency().name()) && s.contains(pair.getBuyCurrency().name())) {
+                    singleReq.add(m);
+                    break;
+                }
+                if (s.contains(pair.getSellCurrency().name()))
+                    sale = true;
+                else if (s.contains(pair.getBuyCurrency().name()))
+                    buy = true;
+                if (sale && buy)
+                    break;
+            }
+        }
+
+        List<OptimalOrderDto> orders = tradesByPair(singleReq, pair);
+        if (singleReq.size() != marketplaces.size()) {
+
+        }
         sortOrders(orders, pair);
         List<OptimalOrderDto> limitedOrders = new LinkedList<>();
         BigDecimal sellAmount = BigDecimal.ZERO;
@@ -102,4 +143,51 @@ public class OrderServiceImpl implements OrderService {
         }
         return buy.divide(sell, BigDecimal.ROUND_HALF_UP).stripTrailingZeros();
     }
+
+    public List<OptimalOrderDto> tradesByPair(List<Marketplace> marketplaces, PairDto pair) {
+        ExecutorService executorService = Executors.newFixedThreadPool(marketplaces.size());
+
+        List<CompletableFuture<List<OptimalOrderDto>>> futures = marketplaces.stream().map(
+                m -> CompletableFuture.supplyAsync(() ->
+                        m.tradesByPair(pair), executorService)
+                        .applyToEither(timeoutAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS), Function.identity())
+                        .exceptionally(error -> {
+                            log.warn("Failed getOneSegmentDetails: " + error);
+                            return Collections.emptyList();
+                        }))
+                .collect(Collectors.toList());
+
+        List<OptimalOrderDto> collect = futures.stream()
+                .map(CompletableFuture::join)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        executorService.shutdown();
+        return collect;
+    }
+
+    private <T> CompletableFuture<T> timeoutAfter(long timeout, TimeUnit unit) {
+        ScheduledThreadPoolExecutor delayer = new ScheduledThreadPoolExecutor(1);
+
+        CompletableFuture<T> result = new CompletableFuture<>();
+        delayer.schedule(() -> result.completeExceptionally(new TimeoutException("Timeout after " + timeout)), timeout, unit);
+        return result;
+    }
+
+    private List<Marketplace> marketplacesByPair(PairDto pair, int depth) {
+        return marketplaces.stream()
+                .filter(m -> isHavePair(m, pair))
+                .collect(toList());
+    }
+
+    private boolean isHavePair(Marketplace marketplace, PairDto pair) {
+        return marketplace.getAvailablePairs().stream()
+                .anyMatch(s ->
+                        s.contains(pair.getBuyCurrency()
+                                .name()) &&
+                                s.contains(pair.getSellCurrency()
+                                        .name()
+                                ));
+    }
+
 }

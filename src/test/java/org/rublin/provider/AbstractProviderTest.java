@@ -1,9 +1,14 @@
 package org.rublin.provider;
 
+import org.junit.runner.RunWith;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,6 +18,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AbstractProviderTest {
+    @Autowired
+    @Qualifier("btc")
+    protected Marketplace btcTradeMarketplace;
+
+    @Autowired
+    @Qualifier("ctyptopia")
+    protected Marketplace cryptopiaMarketplace;
+
+    @Autowired
+    @Qualifier("livecoin")
+    protected Marketplace livecoinMarketplace;
 
     public void sell(List<OptimalOrderDto> orders, TradePlatform platform, PairDto pair) {
         assertTrue(Objects.nonNull(orders));

@@ -1,34 +1,37 @@
-package org.rublin.provider.btctrade;
+package org.rublin.provider.livecoin;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
 import org.rublin.provider.AbstractProviderTest;
 import org.rublin.provider.Marketplace;
-import org.rublin.provider.cryptopia.CryptopiaMarketplace;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
-public class BtcTradeMarketplaceTest extends AbstractProviderTest {
-    Marketplace marketplace = new BtcTradeMarketplace();
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringBootTest
+public class LivecoinMarketplaceIT extends AbstractProviderTest {
 
     @Test
     public void sellTest() throws Exception {
         PairDto pair = PairDto.builder()
                 .sellCurrency(Currency.KRB)
-                .buyCurrency(Currency.UAH)
+                .buyCurrency(Currency.BTC)
                 .build();
-        sell(marketplace.tradesByPair(pair), TradePlatform.BTC_TRADE, pair);
+        sell(livecoinMarketplace.tradesByPair(pair), TradePlatform.LIVECOIN, pair);
     }
 
     @Test
     public void buyTest() throws Exception {
         PairDto pair = PairDto.builder()
-                .sellCurrency(Currency.UAH)
+                .sellCurrency(Currency.BTC)
                 .buyCurrency(Currency.KRB)
                 .build();
-        buy(marketplace.tradesByPair(pair), TradePlatform.BTC_TRADE, pair);
+        buy(livecoinMarketplace.tradesByPair(pair), TradePlatform.LIVECOIN, pair);
     }
 }
