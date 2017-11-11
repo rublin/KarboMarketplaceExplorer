@@ -54,8 +54,8 @@ public class LivecoinMarketplace implements Marketplace {
         String url = LIVECOIN.concat(pair);
         Optional<OrderBook> response = getResponse(url);
         if (response.isPresent()) {
-            BigDecimal sell = response.get().getAsks().get(0)[0];
-            BigDecimal buy = response.get().getBids().get(0)[0];
+            BigDecimal buy = response.get().getAsks().get(0)[0];
+            BigDecimal sell = response.get().getBids().get(0)[0];
             return RateDto.builder()
                     .saleRate(sell)
                     .buyRate(buy)
