@@ -39,6 +39,11 @@ public class LivecoinMarketplace implements Marketplace {
     }
 
     @Override
+    public List<String> getAvailablePairs() {
+        return livecoinPair;
+    }
+
+    @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
         List<OptimalOrderDto> result = new ArrayList<>();
         RestTemplate template = new RestTemplate();

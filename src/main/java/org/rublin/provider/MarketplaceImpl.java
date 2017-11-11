@@ -60,6 +60,13 @@ public class MarketplaceImpl implements Marketplace {
         return collect;
     }
 
+//    public List<OptimalOrderDto> tradesByPair(PairDto pair, Marketplace marketplace)
+
+    @Override
+    public List<String> getAvailablePairs() {
+        return null;
+    }
+
     private  <T> CompletableFuture<T> timeoutAfter(long timeout, TimeUnit unit) {
         ScheduledThreadPoolExecutor delayer = new ScheduledThreadPoolExecutor(1);
 

@@ -38,6 +38,11 @@ public class CryptopiaMarketplace implements Marketplace {
     }
 
     @Override
+    public List<String> getAvailablePairs() {
+        return cryptopiaPair;
+    }
+
+    @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
         List<OptimalOrderDto> result = new ArrayList<>();
         RestTemplate template = new RestTemplate();
