@@ -1,4 +1,4 @@
-package org.rublin.service;
+package org.rublin.service.impl;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -7,6 +7,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.rublin.Currency;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
+import org.rublin.service.impl.OrderServiceImpl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

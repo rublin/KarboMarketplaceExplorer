@@ -1,4 +1,4 @@
-package org.rublin.service;
+package org.rublin.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
@@ -8,6 +8,7 @@ import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
 import org.rublin.provider.Marketplace;
 import org.rublin.provider.cryptonator.CryptonatorRate;
+import org.rublin.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;

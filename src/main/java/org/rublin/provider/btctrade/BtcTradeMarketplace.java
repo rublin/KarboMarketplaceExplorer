@@ -5,6 +5,7 @@ import org.rublin.Currency;
 import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
+import org.rublin.dto.RateDto;
 import org.rublin.provider.Marketplace;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,11 @@ public class BtcTradeMarketplace implements Marketplace {
     @Override
     public List<String> getAvailablePairs() {
         return btctradePair;
+    }
+
+    @Override
+    public List<RateDto> rates() {
+        return Collections.emptyList();
     }
 
     @Override

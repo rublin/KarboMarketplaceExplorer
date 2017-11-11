@@ -3,6 +3,7 @@ package org.rublin.provider;
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
+import org.rublin.dto.RateDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -38,7 +39,7 @@ public class MarketplaceImpl implements Marketplace {
 
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
-        List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
+        final List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
         ExecutorService executorService = Executors.newFixedThreadPool(3);
 
         List<CompletableFuture<List<OptimalOrderDto>>> futures = marketplaces.stream().map(
@@ -65,6 +66,29 @@ public class MarketplaceImpl implements Marketplace {
     @Override
     public List<String> getAvailablePairs() {
         return null;
+    }
+
+    @Override
+    public List<RateDto> rates() {
+        final List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+
+        List<CompletableFuture<List<RateDto>>> futures = marketplaces.stream().map(
+                m -> CompletableFuture.supplyAsync(m::rates, executorService)
+//                        .applyToEither(timeoutAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS), Function.identity())
+                        .exceptionally(error -> {
+                            log.warn("Failed rate: " + error);
+                            return Collections.emptyList();
+                        }))
+                .collect(Collectors.toList());
+
+        List<RateDto> collect = futures.stream()
+                .map(CompletableFuture::join)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        executorService.shutdown();
+        return collect;
     }
 
     private  <T> CompletableFuture<T> timeoutAfter(long timeout, TimeUnit unit) {

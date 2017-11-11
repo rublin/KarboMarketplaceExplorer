@@ -5,6 +5,7 @@ import org.rublin.Currency;
 import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
+import org.rublin.dto.RateDto;
 import org.rublin.provider.Marketplace;
 import org.rublin.provider.cryptopia.MarketOrders;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,10 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
@@ -41,6 +39,11 @@ public class LivecoinMarketplace implements Marketplace {
     @Override
     public List<String> getAvailablePairs() {
         return livecoinPair;
+    }
+
+    @Override
+    public List<RateDto> rates() {
+        return Collections.emptyList();
     }
 
     @Override
