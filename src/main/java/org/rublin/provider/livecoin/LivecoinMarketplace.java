@@ -43,13 +43,33 @@ public class LivecoinMarketplace implements Marketplace {
 
     @Override
     public List<RateDto> rates() {
-        return Collections.emptyList();
+        return livecoinPair.stream()
+                .map(this::rateByPair)
+                .filter(Objects::nonNull)
+                .collect(toList());
+    }
+
+    private RateDto rateByPair(String pair) {
+        String target = pair.substring(4);
+        String url = LIVECOIN.concat(pair);
+        Optional<OrderBook> response = getResponse(url);
+        if (response.isPresent()) {
+            BigDecimal sell = response.get().getAsks().get(0)[0];
+            BigDecimal buy = response.get().getBids().get(0)[0];
+            return RateDto.builder()
+                    .saleRate(sell)
+                    .buyRate(buy)
+                    .origin(Currency.KRB)
+                    .target(Currency.valueOf(target))
+                    .marketplace(TradePlatform.LIVECOIN)
+                    .build();
+        }
+        return null;
     }
 
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
         List<OptimalOrderDto> result = new ArrayList<>();
-        RestTemplate template = new RestTemplate();
         Currency buy = pair.getBuyCurrency();
         Currency sell = pair.getSellCurrency();
 
@@ -61,13 +81,7 @@ public class LivecoinMarketplace implements Marketplace {
         }
         String url = LIVECOIN.concat(supportedPair.get());
 
-        OrderBook livecoinResults = null;
-        try {
-            log.info("Send {} req", url);
-            livecoinResults = template.getForObject(url, OrderBook.class);
-        } catch (Throwable e) {
-            log.warn("{} error", e.getMessage());
-        }
+        OrderBook livecoinResults = getResponse(url).orElseGet(null);
 
         if (livecoinResults != null) {
             log.info("{} returns {} buy and {} sell orders",
@@ -98,6 +112,18 @@ public class LivecoinMarketplace implements Marketplace {
             }
         }
         return result;
+    }
+
+    private Optional<OrderBook> getResponse(String url) {
+        RestTemplate template = new RestTemplate();
+        OrderBook livecoinResults = null;
+        try {
+            log.info("Send {} req", url);
+            livecoinResults = template.getForObject(url, OrderBook.class);
+        } catch (Throwable e) {
+            log.warn("{} error", e.getMessage());
+        }
+        return Optional.ofNullable(livecoinResults);
     }
 }
 
