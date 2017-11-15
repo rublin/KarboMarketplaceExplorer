@@ -2,6 +2,7 @@ package org.rublin.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
+import org.rublin.TradePlatform;
 import org.rublin.dto.RateDto;
 import org.rublin.dto.RateResponseDto;
 import org.rublin.provider.Marketplace;
@@ -29,11 +30,14 @@ public class RateServiceImpl implements RateService {
     public RateResponseDto getCurrentRate() {
         long start = System.currentTimeMillis();
         List<RateDto> rates = marketplace.rates();
-        Map<Currency, List<RateDto>> collect = rates.stream()
+        Map<Currency, List<RateDto>> byCurrency = rates.stream()
                 .collect(groupingBy(RateDto::getTarget));
+        Map<TradePlatform, List<RateDto>> byMarketplace = rates.stream()
+                .collect(groupingBy(RateDto::getMarketplace));
         log.info("{} rate results received by {} ms", rates.size(), System.currentTimeMillis() - start);
         return RateResponseDto.builder()
-                .byCurrency(collect)
+                .byCurrency(byCurrency)
+                .byMarketplace(byMarketplace)
                 .build();
     }
 }

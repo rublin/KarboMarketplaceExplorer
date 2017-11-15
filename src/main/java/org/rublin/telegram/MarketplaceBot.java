@@ -2,6 +2,7 @@ package org.rublin.telegram;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
+import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OptimalOrdersResult;
 import org.rublin.dto.PairDto;
@@ -25,6 +26,8 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +35,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 public class MarketplaceBot extends TelegramLongPollingBot {
@@ -246,31 +251,32 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
     private String createPriceResponse(List<RateDto> rates) {
         StringBuilder builder = new StringBuilder();
-        for (RateDto rate : rates) {
+        TradePlatform marketplace = rates.get(0).getMarketplace();
+        builder.append("*").append(marketplace).append("*\n");
+
+        List<RateDto> sorted = rates.stream().sorted(Comparator.comparing(r -> r.getTarget().name())).collect(toList());
+        for (RateDto rate : sorted) {
             builder.append(rate.getTarget())
                     .append(": ")
-                    .append(rate.getSaleRate())
+                    .append(rate.getSaleRate().stripTrailingZeros())
                     .append(" ")
-                    .append(rate.getBuyRate())
-                    .append(" * ")
-                    .append(rate.getMarketplace())
-                    .append("* ")
+                    .append(rate.getBuyRate().stripTrailingZeros())
+                    .append("  ")
+//                    .append(rate.getMarketplace())
+//                    .append("* ")
                     .append(Objects.nonNull(rate.getInfo()) ? rate.getInfo() : "")
                     .append("\n");
-//            builder.append(rate.getOrigin())
-//                    .append(": ")
-//                    .append(rate.getRate().stripTrailingZeros())
-//                    .append("*")
-//                    .append(rate.getTarget());
-//            builder.append("*  (").append(rate.getChange().toPlainString()).append(")\n");
         }
+        builder.append("\n");
         return builder.toString();
     }
 
     private String createPriceResponse(RateResponseDto rate) {
         Map<Currency, List<RateDto>> byCurrency = rate.getByCurrency();
-        String result = Arrays.stream(Currency.values())
-                .map(byCurrency::get)
+        StringBuilder builder = new StringBuilder();
+        Map<TradePlatform, List<RateDto>> byMarketplace = rate.getByMarketplace();
+        String result = Arrays.stream(TradePlatform.values())
+                .map(byMarketplace::get)
                 .filter(Objects::nonNull)
                 .map(this::createPriceResponse)
                 .reduce("\n", String::concat);

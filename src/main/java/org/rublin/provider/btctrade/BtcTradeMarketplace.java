@@ -94,14 +94,15 @@ public class BtcTradeMarketplace implements Marketplace {
         if (sellResponse.isPresent() && buyResponse.isPresent()) {
             BigDecimal buy = sellResponse.get().getMinPrice();
             BigDecimal sell = buyResponse.get().getMaxPrice();
-
-            return RateDto.builder()
+            RateDto rate = RateDto.builder()
                     .saleRate(sell)
                     .buyRate(buy)
                     .origin(Currency.valueOf(pairs[0]))
                     .target(Currency.valueOf(pairs[1]))
                     .marketplace(TradePlatform.BTC_TRADE)
                     .build();
+            log.info("Receive {}-{} rate {} {}", rate.getOrigin(), rate.getTarget(), rate.getSaleRate(), rate.getBuyRate());
+            return rate;
         }
 
         return null;
