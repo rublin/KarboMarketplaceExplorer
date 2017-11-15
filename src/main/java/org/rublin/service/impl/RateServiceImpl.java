@@ -7,6 +7,7 @@ import org.rublin.provider.Marketplace;
 import org.rublin.service.RateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class RateServiceImpl implements RateService {
     private Marketplace marketplace;
 
     @Override
+    @Cacheable("rate")
     public RateResponseDto getCurrentRate() {
         List<RateDto> rates = marketplace.rates();
         Map<Currency, List<RateDto>> collect = rates.stream()

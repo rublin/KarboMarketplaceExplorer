@@ -3,6 +3,8 @@ package org.rublin;
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.service.TelegramBotService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -21,5 +23,11 @@ public class ScheduledTasks {
                 "*KaAxHCPtJaFGDq4xLn3fASf3zVrAmqyE4359zn3r3deVjCeM3CYq7K4Y1pkfZkjfRd1W2VPXVZdA5RBdpc4Vzamo1H4F5qZ*";
         log.info("Ask for donation: \n {}", message);
         botService.sendMessage(message);
+    }
+
+    @CacheEvict(cacheNames = "rate")
+    @Scheduled(fixedDelay = 600000)
+    public void cleanCache() {
+        log.info("cache rate evicted");
     }
 }
