@@ -21,4 +21,6 @@ public class RateDto {
     private BigDecimal buyRate;
     @Deprecated
     private BigDecimal change;
+
+    private String info;
 }

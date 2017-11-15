@@ -30,6 +30,9 @@ public class TelegramBotService {
     @Autowired
     private TelegramUserRepository repository;
 
+    @Autowired
+    private RateService rateService;
+
     private TelegramBotsApi telegramBotsApi;
 
     public void sendMessage(String message) {
@@ -41,7 +44,7 @@ public class TelegramBotService {
         ApiContextInitializer.init();
         telegramBotsApi = new TelegramBotsApi();
         try {
-            bot = new MarketplaceBot(orderService, repository, username, token);
+            bot = new MarketplaceBot(orderService, repository, rateService, username, token);
             telegramBotsApi.registerBot(bot);
             log.info("Telegram bot register success");
         } catch (TelegramApiRequestException e) {

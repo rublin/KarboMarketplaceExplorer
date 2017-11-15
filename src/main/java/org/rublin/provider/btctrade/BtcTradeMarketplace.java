@@ -7,17 +7,22 @@ import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
 import org.rublin.provider.Marketplace;
-import org.rublin.provider.cryptopia.MarketOrders;
-import org.rublin.provider.cryptopia.Order;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @Slf4j
 @Component("btc")
@@ -43,15 +48,47 @@ public class BtcTradeMarketplace implements Marketplace {
 
     @Override
     public List<RateDto> rates() {
-        return btctradePair.stream()
-                .filter(s -> s.contains("KRB"))
+        Map<Currency, RateDto> rates = btctradePair.stream()
+//                .filter(s -> s.contains("KRB"))
                 .map(this::rateByPair)
                 .filter(Objects::nonNull)
-                .collect(toList());
+                .collect(toMap(RateDto::getOrigin, Function.identity()));
+        return calcAditionalRates(rates);
+    }
+
+    private List<RateDto> calcAditionalRates(Map<Currency, RateDto> rates) {
+        List<RateDto> withAdditional = new ArrayList<>();
+        RateDto krbRate = rates.get(Currency.KRB);
+        if (Objects.isNull(krbRate)) {
+            return withAdditional;
+        }
+        for (Currency currency : Currency.values()) {
+            RateDto rate = rates.get(currency);
+            if (Objects.nonNull(rate)) {
+                if (currency == Currency.KRB) {
+                    withAdditional.add(rate);
+                } else if (rate.getTarget() == krbRate.getTarget()) {
+                    RateDto additionalRate = RateDto.builder()
+                            .origin(Currency.KRB)
+                            .target(rate.getOrigin())
+                            .saleRate(krbRate.getSaleRate().divide(rate.getSaleRate(), BigDecimal.ROUND_HALF_UP))
+                            .buyRate(krbRate.getBuyRate().divide(rate.getBuyRate(), BigDecimal.ROUND_HALF_UP))
+                            .marketplace(TradePlatform.BTC_TRADE)
+                            .info(String.format("(%s > %s > %s)",
+                                    rate.getOrigin(),
+                                    rate.getTarget(),
+                                    krbRate.getOrigin()))
+                            .build();
+                    log.info("Created additional {} rate {} - {}", currency, additionalRate.getSaleRate(), additionalRate.getBuyRate());
+                    withAdditional.add(additionalRate);
+                }
+            }
+        }
+        return withAdditional;
     }
 
     private RateDto rateByPair(String pair) {
-        String target = pair.substring(4);
+        String[] pairs = pair.split("_");
         Optional<TradesBuyPair> sellResponse = getResponse(BTC_TRADE_URL.concat("sell/").concat(pair));
         Optional<TradesBuyPair> buyResponse = getResponse(BTC_TRADE_URL.concat("buy/").concat(pair));
         if (sellResponse.isPresent() && buyResponse.isPresent()) {
@@ -61,8 +98,8 @@ public class BtcTradeMarketplace implements Marketplace {
             return RateDto.builder()
                     .saleRate(sell)
                     .buyRate(buy)
-                    .origin(Currency.KRB)
-                    .target(Currency.valueOf(target))
+                    .origin(Currency.valueOf(pairs[0]))
+                    .target(Currency.valueOf(pairs[1]))
                     .marketplace(TradePlatform.BTC_TRADE)
                     .build();
         }
@@ -100,7 +137,7 @@ public class BtcTradeMarketplace implements Marketplace {
                     .map(trade -> OptimalOrderDto.builder()
                             .marketplace(TradePlatform.BTC_TRADE.name())
                             .amountToSale(pair.isBought() ? trade.getCurrencyBase() : trade.getCurrencyTrade())
-                            .amountToBuy(pair.isBought() ? trade.getCurrencyTrade(): trade.getCurrencyBase())
+                            .amountToBuy(pair.isBought() ? trade.getCurrencyTrade() : trade.getCurrencyBase())
                             .rate(trade.getPrice())
                             .build())
                     .collect(toList());

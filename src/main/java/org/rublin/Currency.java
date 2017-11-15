@@ -2,11 +2,11 @@ package org.rublin;
 
 public enum Currency {
     KRB,
+    UAH,
+    USD,
     BTC,
     LTC,
     DOGE,
-    UAH,
-    USD,
     RUR;
 
     public static Currency getCurrency(String currency) {

@@ -6,9 +6,11 @@ import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OptimalOrdersResult;
 import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
+import org.rublin.dto.RateResponseDto;
 import org.rublin.model.TelegramUser;
 import org.rublin.repository.TelegramUserRepository;
 import org.rublin.service.OrderService;
+import org.rublin.service.RateService;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
@@ -20,9 +22,9 @@ import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,17 +40,19 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private String token;
     private OrderService orderService;
     private TelegramUserRepository repository;
+    private RateService rateService;
 
     private Map<Long, LinkedList<BotCommands>> commandsHistory = new HashMap<>();
     private ConcurrentMap<Integer, TelegramUser> usersById = new ConcurrentHashMap<>();
     private ConcurrentMap<Long, TelegramUser> chatToUser = new ConcurrentHashMap<>();
     private ConcurrentMap<Integer, Integer> statistic = new ConcurrentHashMap<>();
 
-    public MarketplaceBot(OrderService orderService, TelegramUserRepository repository, String username, String token) {
+    public MarketplaceBot(OrderService orderService, TelegramUserRepository repository, RateService rateService, String username, String token) {
         this.orderService = orderService;
         this.username = username;
         this.token = token;
         this.repository = repository;
+        this.rateService = rateService;
         init();
     }
 
@@ -243,14 +247,35 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private String createPriceResponse(List<RateDto> rates) {
         StringBuilder builder = new StringBuilder();
         for (RateDto rate : rates) {
-            builder.append(rate.getOrigin())
+            builder.append(rate.getTarget())
                     .append(": ")
-                    .append(rate.getRate().stripTrailingZeros())
-                    .append("*")
-                    .append(rate.getTarget());
-            builder.append("*  (").append(rate.getChange().toPlainString()).append(")\n");
+                    .append(rate.getSaleRate())
+                    .append(" ")
+                    .append(rate.getBuyRate())
+                    .append(" * ")
+                    .append(rate.getMarketplace())
+                    .append("* ")
+                    .append(Objects.nonNull(rate.getInfo()) ? rate.getInfo() : "")
+                    .append("\n");
+//            builder.append(rate.getOrigin())
+//                    .append(": ")
+//                    .append(rate.getRate().stripTrailingZeros())
+//                    .append("*")
+//                    .append(rate.getTarget());
+//            builder.append("*  (").append(rate.getChange().toPlainString()).append(")\n");
         }
         return builder.toString();
+    }
+
+    private String createPriceResponse(RateResponseDto rate) {
+        Map<Currency, List<RateDto>> byCurrency = rate.getByCurrency();
+        String result = Arrays.stream(Currency.values())
+                .map(byCurrency::get)
+                .filter(Objects::nonNull)
+                .map(this::createPriceResponse)
+                .reduce("\n", String::concat);
+
+        return result;
     }
 
     private String createOrdersResponse(OptimalOrdersResult optimalOrders) {
@@ -366,7 +391,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
 
     private SendMessage price(Message message) {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
-        List<RateDto> rates = orderService.rates();
+        RateResponseDto rates = rateService.getCurrentRate();
         sendMessage.setText(createPriceResponse(rates));
         return sendMessage;
     }

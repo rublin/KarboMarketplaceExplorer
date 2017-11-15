@@ -1,5 +1,6 @@
 package org.rublin.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
 import org.rublin.dto.RateDto;
 import org.rublin.dto.RateResponseDto;
@@ -15,6 +16,7 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.groupingBy;
 
+@Slf4j
 @Service
 public class RateServiceImpl implements RateService {
 
@@ -25,10 +27,11 @@ public class RateServiceImpl implements RateService {
     @Override
     @Cacheable("rate")
     public RateResponseDto getCurrentRate() {
+        long start = System.currentTimeMillis();
         List<RateDto> rates = marketplace.rates();
         Map<Currency, List<RateDto>> collect = rates.stream()
                 .collect(groupingBy(RateDto::getTarget));
-
+        log.info("{} rate results received by {} ms", rates.size(), System.currentTimeMillis() - start);
         return RateResponseDto.builder()
                 .byCurrency(collect)
                 .build();
