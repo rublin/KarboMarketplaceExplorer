@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.*;
@@ -45,7 +46,7 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private CryptonatorRate cryptonator;
 
-    private List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
+    private List<Marketplace> marketplaces;
 
     @Override
     public OptimalOrdersResult findOptimalOrders(PairDto pair, BigDecimal amount) {
@@ -189,6 +190,11 @@ public class OrderServiceImpl implements OrderService {
                                 s.contains(pair.getSellCurrency()
                                         .name()
                                 ));
+    }
+
+    @PostConstruct
+    private void init() {
+        marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
     }
 
 }
