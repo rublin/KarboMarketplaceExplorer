@@ -69,18 +69,19 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         });
     }
 
-    public void sendCustomMessage(String message) {
+    public int sendCustomMessage(String message) {
+        int count = 0;
         for (ConcurrentMap.Entry entry : chatToUser.entrySet()) {
             Long chatId = (Long) entry.getKey();
-
-            User user = (User) entry.getValue();
-            String name = user.getFirstName() == null ? user.getUserName() : user.getFirstName();
-            name = name == null ? "anonymous user" : name;
+            TelegramUser user = (TelegramUser) entry.getValue();
+            String name = getContact(user);
             SendMessage sendMessage = createSendMessage(chatId);
             sendMessage.enableMarkdown(true);
             sendMessage.setText(String.format("Hi, *%s*!\n\n%s", name, message));
             doExecute(sendMessage);
+            count++;
         }
+        return count;
     }
 
     private void doExecute(SendMessage sendMessage) {
@@ -121,7 +122,9 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                     .userName(user.getUserName())
                     .chatId(chatId)
                     .build();
-            repository.save(telegramUser);
+            log.info("Try to save new user {}", user);
+            TelegramUser save = repository.save(telegramUser);
+            log.info("User saved {}", save);
             usersById.putIfAbsent(id, telegramUser);
             chatToUser.putIfAbsent(chatId, telegramUser);
         }
@@ -220,7 +223,21 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         } else if (Objects.nonNull(lastName)) {
             return lastName;
         }
-        return "unknown user";
+        return "anonymous user";
+    }
+
+    private String getContact(TelegramUser user) {
+        String firstName = user.getFirstName();
+        String lastName = user.getLastName();
+        String userName = user.getUserName();
+        if (Objects.nonNull(firstName)) {
+            return firstName;
+        } else if (Objects.nonNull(userName)) {
+            return userName;
+        } else if (Objects.nonNull(lastName)) {
+            return lastName;
+        }
+        return "anonymous user";
     }
 
     private SendMessage buyCommand(Message message, Currency currency) {
