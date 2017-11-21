@@ -24,15 +24,17 @@ public class ScheduledTasks {
     public void askForDonation() {
         String message = "Do you like to use this bot? I hope so...\n" +
                 "Address (KRB) for donate\n\n" +
+                "*donate.rublin.org* or\n" +
                 "*KaAxHCPtJaFGDq4xLn3fASf3zVrAmqyE4359zn3r3deVjCeM3CYq7K4Y1pkfZkjfRd1W2VPXVZdA5RBdpc4Vzamo1H4F5qZ*";
         log.info("Ask for donation: \n {}", message);
         botService.sendMessage(message);
     }
 
-//    @CacheEvict(cacheNames = "rate")
     @Scheduled(fixedDelay = 600000)
     public void cleanCache() {
+        log.info("cache update start");
+        long start = System.currentTimeMillis();
         rateService.updateCacheRate();
-        log.info("cache updated");
+        log.info("cache update takes {} ms", System.currentTimeMillis() - start);
     }
 }

@@ -188,11 +188,13 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private SendMessage info(Message message) {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
         StringBuilder builder = new StringBuilder();
-        builder.append("*Price* will return [Karbo](http://karbowanec.com/en/) price to other currencies\n");
+        builder.append("*Price* will return [Karbo](https://karbo.io) price to other currencies\n");
         builder.append("*Sell* will return optimal sell orders\n");
         builder.append("*Buy* will return optimal buy orders\n\n");
         builder.append("Source code is available [here](https://github.com/rublin/KarboMarketplaceExplorer)\n\n");
-        builder.append("Address for donate: \n*KaAxHCPtJaFGDq4xLn3fASf3zVrAmqyE4359zn3r3deVjCeM3CYq7K4Y1pkfZkjfRd1W2VPXVZdA5RBdpc4Vzamo1H4F5qZ*");
+        builder.append("Address for donate: \n" +
+                "*donate.rublin.org* or\n" +
+                "*KaAxHCPtJaFGDq4xLn3fASf3zVrAmqyE4359zn3r3deVjCeM3CYq7K4Y1pkfZkjfRd1W2VPXVZdA5RBdpc4Vzamo1H4F5qZ*");
         sendMessage.setText(builder.toString());
         return sendMessage;
     }
@@ -368,7 +370,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                         Currency.UAH,
                         Currency.RUR,
                         Currency.USD));
-        sendMessage.setText("Select currency what you want to convert with Karbo");
+        sendMessage.setText("Attention!\nThis command may take a lot of time(from second to minute)\nSo, keep calm and mine karbo\n\nSelect currency what you want to convert with Karbo");
 
         return sendMessage;
     }
@@ -380,7 +382,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                         Currency.UAH,
                         Currency.RUR,
                         Currency.USD));
-        sendMessage.setText("Select currency what you want to convert with Karbo");
+        sendMessage.setText("Attention!\nThis command may take a lot of time(from second to minute)\nSo, keep calm and mine karbo\n\nSelect currency what you want to convert with Karbo");
 
         return sendMessage;
     }
