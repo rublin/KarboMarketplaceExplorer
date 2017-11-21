@@ -7,6 +7,7 @@ import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
 import org.rublin.provider.Marketplace;
+import org.rublin.utils.RateUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -53,38 +54,7 @@ public class BtcTradeMarketplace implements Marketplace {
                 .map(this::rateByPair)
                 .filter(Objects::nonNull)
                 .collect(toMap(RateDto::getOrigin, Function.identity()));
-        return calcAditionalRates(rates);
-    }
-
-    private List<RateDto> calcAditionalRates(Map<Currency, RateDto> rates) {
-        List<RateDto> withAdditional = new ArrayList<>();
-        RateDto krbRate = rates.get(Currency.KRB);
-        if (Objects.isNull(krbRate)) {
-            return withAdditional;
-        }
-        for (Currency currency : Currency.values()) {
-            RateDto rate = rates.get(currency);
-            if (Objects.nonNull(rate)) {
-                if (currency == Currency.KRB) {
-                    withAdditional.add(rate);
-                } else if (rate.getTarget() == krbRate.getTarget()) {
-                    RateDto additionalRate = RateDto.builder()
-                            .origin(Currency.KRB)
-                            .target(rate.getOrigin())
-                            .saleRate(krbRate.getSaleRate().divide(rate.getSaleRate(), BigDecimal.ROUND_HALF_UP))
-                            .buyRate(krbRate.getBuyRate().divide(rate.getBuyRate(), BigDecimal.ROUND_HALF_UP))
-                            .marketplace(TradePlatform.BTC_TRADE)
-                            .info(String.format("(%s > %s > %s)",
-                                    rate.getOrigin(),
-                                    rate.getTarget(),
-                                    krbRate.getOrigin()))
-                            .build();
-                    log.info("Created additional {} rate {} - {}", currency, additionalRate.getSaleRate(), additionalRate.getBuyRate());
-                    withAdditional.add(additionalRate);
-                }
-            }
-        }
-        return withAdditional;
+        return RateUtil.calcAdditionalRates(rates);
     }
 
     private RateDto rateByPair(String pair) {

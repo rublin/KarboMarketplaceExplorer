@@ -30,7 +30,7 @@ public class OrderServiceImpl implements OrderService {
     @Qualifier("marketplace")
     private Marketplace marketplace;
 
-    private static final long TIMEOUT_SECONDS = 5;
+    private static final long TIMEOUT_SECONDS = 60;
     @Autowired
     @Qualifier("btc")
     private Marketplace btcTradeMarketplace;

@@ -5,6 +5,7 @@ public enum Currency {
     UAH,
     USD,
     BTC,
+    BCH,
     LTC,
     DOGE,
     RUR;

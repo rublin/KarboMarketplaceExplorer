@@ -1,6 +1,7 @@
 package org.rublin;
 
 import lombok.extern.slf4j.Slf4j;
+import org.rublin.service.RateService;
 import org.rublin.service.TelegramBotService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -15,6 +16,9 @@ public class ScheduledTasks {
     @Autowired
     private TelegramBotService botService;
 
+    @Autowired
+    private RateService rateService;
+
     @Scheduled(cron = "0 1 12 6 * *")
 //    @Scheduled(fixedRate = 60000)
     public void askForDonation() {
@@ -25,9 +29,10 @@ public class ScheduledTasks {
         botService.sendMessage(message);
     }
 
-    @CacheEvict(cacheNames = "rate")
+//    @CacheEvict(cacheNames = "rate")
     @Scheduled(fixedDelay = 600000)
     public void cleanCache() {
-        log.info("cache rate evicted");
+        rateService.updateCacheRate();
+        log.info("cache updated");
     }
 }

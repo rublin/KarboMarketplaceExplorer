@@ -201,10 +201,24 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
         sendMessage.enableMarkdown(true);
         StringBuilder builder = new StringBuilder();
-        builder.append("Hello, *").append(message.getFrom().getFirstName()).append("*\n\n");
+        builder.append("Hello, *").append(getContact(message.getFrom())).append("*\n\n");
         builder.append("You are welcomed by the *Karbo marketplace bot*");
         sendMessage.setText(builder.toString());
         return sendMessage;
+    }
+
+    private String getContact(User user) {
+        String firstName = user.getFirstName();
+        String lastName = user.getLastName();
+        String userName = user.getUserName();
+        if (Objects.nonNull(firstName)) {
+            return firstName;
+        } else if (Objects.nonNull(userName)) {
+            return userName;
+        } else if (Objects.nonNull(lastName)) {
+            return lastName;
+        }
+        return "unknown user";
     }
 
     private SendMessage buyCommand(Message message, Currency currency) {

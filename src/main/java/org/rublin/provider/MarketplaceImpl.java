@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Component("marketplace")
 public class MarketplaceImpl implements Marketplace {
 
-    private static final long TIMEOUT_SECONDS = 5;
+    private static final long TIMEOUT_SECONDS = 50;
     @Autowired
     @Qualifier("btc")
     private Marketplace btcTradeMarketplace;
