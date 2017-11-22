@@ -20,7 +20,7 @@ import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Component("livecoin")
-public class LivecoinMarketplace extends AbstractMarketplace implements Marketplace {
+public class LivecoinMarketplace extends AbstractMarketplace {
 
     private static final String LIVECOIN = "https://api.livecoin.net/exchange/order_book?currencyPair=";
     private static final String INTERNAL_SPLIT = "/";
@@ -43,34 +43,11 @@ public class LivecoinMarketplace extends AbstractMarketplace implements Marketpl
     }
 
     @Override
-    public List<String> getAvailablePairs() {
-        return pairs;
-    }
-
-    @Override
     public List<RateDto> rates() {
         return pairs.stream()
                 .map(this::rateByPair)
                 .filter(Objects::nonNull)
                 .collect(toList());
-    }
-
-    private RateDto rateByPair(String pair) {
-        String target = pair.substring(4);
-        String url = LIVECOIN.concat(pair);
-        Optional<OrderBook> response = getResponse(url);
-        if (response.isPresent()) {
-            BigDecimal buy = response.get().getAsks().get(0)[0];
-            BigDecimal sell = response.get().getBids().get(0)[0];
-            return RateDto.builder()
-                    .saleRate(sell)
-                    .buyRate(buy)
-                    .origin(Currency.KRB)
-                    .target(Currency.valueOf(target))
-                    .marketplace(TradePlatform.LIVECOIN)
-                    .build();
-        }
-        return null;
     }
 
     @Override
@@ -130,6 +107,24 @@ public class LivecoinMarketplace extends AbstractMarketplace implements Marketpl
             }
         }
         return result;
+    }
+
+    private RateDto rateByPair(String pair) {
+        String target = pair.substring(4);
+        String url = LIVECOIN.concat(pair);
+        Optional<OrderBook> response = getResponse(url);
+        if (response.isPresent()) {
+            BigDecimal buy = response.get().getAsks().get(0)[0];
+            BigDecimal sell = response.get().getBids().get(0)[0];
+            return RateDto.builder()
+                    .saleRate(sell)
+                    .buyRate(buy)
+                    .origin(Currency.KRB)
+                    .target(Currency.valueOf(target))
+                    .marketplace(TradePlatform.LIVECOIN)
+                    .build();
+        }
+        return null;
     }
 
     private Optional<OrderBook> tradeOrders(String pairString) {

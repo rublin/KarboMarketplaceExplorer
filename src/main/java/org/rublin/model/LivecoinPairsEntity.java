@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 public class LivecoinPairsEntity {
+
     @Value("${provider.livecoin.pair}")
     private String pairString;
 }
