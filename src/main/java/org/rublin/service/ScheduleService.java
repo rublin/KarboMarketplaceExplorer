@@ -1,6 +1,7 @@
 package org.rublin.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.rublin.provider.MarketplaceService;
 import org.rublin.service.RateService;
 import org.rublin.service.TelegramBotService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class ScheduleService {
     @Autowired
     private RateService rateService;
 
+    @Autowired
+    private MarketplaceService marketplaceService;
+
     @Scheduled(cron = "0 1 12 6 * *")
 //    @Scheduled(fixedRate = 60000)
     public void askForDonation() {
@@ -31,11 +35,12 @@ public class ScheduleService {
         botService.sendMessage(message);
     }
 
-    @Scheduled(fixedDelay = 600000)
-    public void cleanCache() {
+    @Scheduled(fixedDelay = 120000)
+    public void updateCache() {
         log.info("cache update start");
         long start = System.currentTimeMillis();
-        rateService.updateCacheRate();
+        marketplaceService.createCache();
+//        rateService.updateCacheRate();
         log.info("cache update takes {} ms", System.currentTimeMillis() - start);
     }
 }
