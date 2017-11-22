@@ -1,17 +1,17 @@
 package org.rublin.service;
 
-import org.rublin.Currency;
 import org.rublin.dto.OptimalOrdersResult;
 import org.rublin.dto.PairDto;
-import org.rublin.dto.RateDto;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 public interface OrderService {
+
+    /**
+     * Optimal orders {@link OptimalOrdersResult} for specific {@link PairDto} and amount
+     * @param pair specific {@link PairDto}
+     * @param amount {@link BigDecimal} amount
+     * @return {@link OptimalOrdersResult}
+     */
     OptimalOrdersResult findOptimalOrders(PairDto pair, BigDecimal amount);
-
-    RateDto getRate(Currency target);
-
-    List<RateDto> rates();
 }

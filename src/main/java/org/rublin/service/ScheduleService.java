@@ -2,13 +2,8 @@ package org.rublin.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.provider.MarketplaceService;
-import org.rublin.service.RateService;
-import org.rublin.service.TelegramBotService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 @Slf4j
