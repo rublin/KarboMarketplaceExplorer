@@ -387,7 +387,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                         Currency.UAH,
                         Currency.RUR,
                         Currency.USD));
-        sendMessage.setText("Attention!\nThis command may take a lot of time(from second to minute)\nSo, keep calm and mine karbo\n\nSelect currency what you want to convert with Karbo");
+        sendMessage.setText("Select currency what you want to convert with Karbo");
 
         return sendMessage;
     }
@@ -399,7 +399,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                         Currency.UAH,
                         Currency.RUR,
                         Currency.USD));
-        sendMessage.setText("Attention!\nThis command may take a lot of time(from second to minute)\nSo, keep calm and mine karbo\n\nSelect currency what you want to convert with Karbo");
+        sendMessage.setText("Select currency what you want to convert with Karbo");
 
         return sendMessage;
     }
