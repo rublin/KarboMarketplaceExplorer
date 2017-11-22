@@ -22,7 +22,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Use {@link MarketplaceService}
+ */
 @Slf4j
+@Deprecated
 @Component("marketplace")
 public class MarketplaceImpl implements Marketplace {
 
@@ -87,7 +91,7 @@ public class MarketplaceImpl implements Marketplace {
 
         List<CompletableFuture<List<RateDto>>> futures = marketplaces.stream().map(
                 m -> CompletableFuture.supplyAsync(m::rates, executorService)
-//                        .applyToEither(timeoutAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS), Function.identity())
+                        .applyToEither(timeoutAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS), Function.identity())
                         .exceptionally(error -> {
                             log.warn("Failed rate: " + error);
                             return Collections.emptyList();
