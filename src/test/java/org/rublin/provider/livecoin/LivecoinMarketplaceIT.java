@@ -5,6 +5,7 @@ import org.junit.runner.RunWith;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
+import org.rublin.dto.OrderResponseDto;
 import org.rublin.dto.PairDto;
 import org.rublin.provider.AbstractProviderTest;
 import org.rublin.provider.Marketplace;
@@ -12,6 +13,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest

@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
+import org.rublin.dto.OrderResponseDto;
 import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
 import org.rublin.provider.Marketplace;
@@ -75,6 +76,16 @@ public class BtcTradeMarketplace implements Marketplace {
             return rate;
         }
 
+        return null;
+    }
+
+    @Override
+    public TradePlatform name() {
+        return null;
+    }
+
+    @Override
+    public List<OrderResponseDto> trades() {
         return null;
     }
 

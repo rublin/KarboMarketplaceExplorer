@@ -1,7 +1,9 @@
 package org.rublin.provider;
 
 import lombok.extern.slf4j.Slf4j;
+import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
+import org.rublin.dto.OrderResponseDto;
 import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +26,7 @@ import java.util.stream.Collectors;
 @Component("marketplace")
 public class MarketplaceImpl implements Marketplace {
 
-    private static final long TIMEOUT_SECONDS = 50;
+    private static final long TIMEOUT_SECONDS = 60;
     @Autowired
     @Qualifier("btc")
     private Marketplace btcTradeMarketplace;
@@ -36,6 +38,16 @@ public class MarketplaceImpl implements Marketplace {
     @Autowired
     @Qualifier("livecoin")
     private Marketplace livecoinMarketplace;
+
+    @Override
+    public TradePlatform name() {
+        return null;
+    }
+
+    @Override
+    public List<OrderResponseDto> trades() {
+        return null;
+    }
 
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
