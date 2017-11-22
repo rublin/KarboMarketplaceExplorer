@@ -12,4 +12,5 @@ public class OrderResponseDto {
     private TradePlatform marketplace;
     private PairDto pair;
     private List<OptimalOrderDto> orderList;
+    private RateDto rate;
 }
