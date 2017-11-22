@@ -12,6 +12,7 @@ import org.rublin.model.CryptorpiaPairsEntity;
 import org.rublin.provider.AbstractMarketplace;
 import org.rublin.provider.Marketplace;
 import org.rublin.provider.livecoin.OrderBook;
+import org.rublin.utils.RateUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -143,13 +144,17 @@ public class CryptopiaMarketplace extends AbstractMarketplace {
                     marketOrders.getData().getBuy().size(),
                     marketOrders.getData().getSell().size());
             String[] currencies = pairString.split(INTERNAL_SPLIT);
+            List<OptimalOrderDto> sellOrders = sellOrders(marketOrders.getData().getBuy());
+            List<OptimalOrderDto> buyOrders = buyOrders(marketOrders.getData().getSell());
+            RateDto rate = RateUtil.createRate(buyOrders.get(0), sellOrders.get(0), Currency.valueOf(currencies[1]), name());
             orderResult.add(OrderResponseDto.builder()
                     .marketplace(name())
                     .pair(PairDto.builder()
                             .buyCurrency(Currency.valueOf(currencies[0]))
                             .sellCurrency(Currency.valueOf(currencies[1]))
                             .build())
-                    .orderList(buyOrders(marketOrders.getData().getSell()))
+                    .orderList(buyOrders)
+                    .rate(rate)
                     .build());
             orderResult.add(OrderResponseDto.builder()
                     .marketplace(name())
@@ -157,7 +162,8 @@ public class CryptopiaMarketplace extends AbstractMarketplace {
                             .buyCurrency(Currency.valueOf(currencies[1]))
                             .sellCurrency(Currency.valueOf(currencies[0]))
                             .build())
-                    .orderList(sellOrders(marketOrders.getData().getBuy()))
+                    .orderList(sellOrders)
+                    .rate(rate)
                     .build());
         }
         return orderResult;

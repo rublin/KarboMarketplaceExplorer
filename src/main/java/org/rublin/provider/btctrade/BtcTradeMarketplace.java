@@ -63,69 +63,6 @@ public class BtcTradeMarketplace extends AbstractMarketplace {
         return trades;
     }
 
-    private List<OrderResponseDto> createOrderResponse(String pairString) {
-        List<OrderResponseDto> orderResult = new ArrayList<>();
-        Optional<TradesBuyPair> tradesBuy = tradeOrders(pairString, true);
-        Optional<TradesBuyPair> tradesSell = tradeOrders(pairString, false);
-        String[] currencies = pairString.split(INTERNAL_SPLIT);
-        if (tradesBuy.isPresent()) {
-            orderResult.add(OrderResponseDto.builder()
-                    .marketplace(name())
-                    .pair(PairDto.builder()
-                            .buyCurrency(Currency.valueOf(currencies[0]))
-                            .sellCurrency(Currency.valueOf(currencies[1]))
-                            .build())
-                    .orderList(orders(tradesBuy.get(), true))
-                    .build());
-        }
-        if (tradesSell.isPresent()) {
-            orderResult.add(OrderResponseDto.builder()
-                    .marketplace(name())
-                    .pair(PairDto.builder()
-                            .buyCurrency(Currency.valueOf(currencies[1]))
-                            .sellCurrency(Currency.valueOf(currencies[0]))
-                            .build())
-                    .orderList(orders(tradesSell.get(), false))
-                    .build());
-        }
-        return orderResult;
-    }
-
-    private List<OptimalOrderDto> orders(TradesBuyPair trades, boolean buy) {
-        return  trades.getTrades().stream()
-                .map(trade -> OptimalOrderDto.builder()
-                        .marketplace(TradePlatform.BTC_TRADE.name())
-                        .amountToSale(buy ? trade.getCurrencyBase() : trade.getCurrencyTrade())
-                        .amountToBuy(buy ? trade.getCurrencyTrade() : trade.getCurrencyBase())
-                        .rate(trade.getPrice())
-                        .build())
-                .collect(toList());
-    }
-    private Optional<TradesBuyPair> tradeOrders(String pairString, boolean buy) {
-        String url = buy ?
-                BTC_TRADE_URL.concat("sell/").concat(pairString) :
-                BTC_TRADE_URL.concat("buy/").concat(pairString);
-        RestTemplate template = new RestTemplate();
-        TradesBuyPair btcTradeResult = null;
-        int count = 0;
-        while (Objects.isNull(btcTradeResult) && count < 3) {
-            try {
-                log.info("Send {} req", url);
-                btcTradeResult = template.getForObject(url, TradesBuyPair.class);
-            } catch (Throwable e) {
-                log.warn("{} error", e.getMessage());
-                count++;
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        }
-
-        return Optional.ofNullable(btcTradeResult);
-    }
-
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
         List<OptimalOrderDto> result = new ArrayList<>();
@@ -193,6 +130,72 @@ public class BtcTradeMarketplace extends AbstractMarketplace {
         int count = 0;
         while (Objects.isNull(btcTradeResult) && count < 3
                 ) {
+            try {
+                log.info("Send {} req", url);
+                btcTradeResult = template.getForObject(url, TradesBuyPair.class);
+            } catch (Throwable e) {
+                log.warn("{} error", e.getMessage());
+                count++;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+
+        return Optional.ofNullable(btcTradeResult);
+    }
+
+    private List<OrderResponseDto> createOrderResponse(String pairString) {
+        List<OrderResponseDto> orderResult = new ArrayList<>();
+        Optional<TradesBuyPair> tradesBuy = tradeOrders(pairString, true);
+        Optional<TradesBuyPair> tradesSell = tradeOrders(pairString, false);
+        String[] currencies = pairString.split(INTERNAL_SPLIT);
+        if (tradesBuy.isPresent() && tradesSell.isPresent()) {
+            List<OptimalOrderDto> buy = orders(tradesBuy.get(), true);
+            List<OptimalOrderDto> sell = orders(tradesSell.get(), false);
+            RateDto rate = RateUtil.createRate(buy.get(0), sell.get(0), Currency.valueOf(currencies[1]), name());
+            orderResult.add(OrderResponseDto.builder()
+                    .marketplace(name())
+                    .pair(PairDto.builder()
+                            .buyCurrency(Currency.valueOf(currencies[0]))
+                            .sellCurrency(Currency.valueOf(currencies[1]))
+                            .build())
+                    .orderList(buy)
+                    .rate(rate)
+                    .build());
+            orderResult.add(OrderResponseDto.builder()
+                    .marketplace(name())
+                    .pair(PairDto.builder()
+                            .buyCurrency(Currency.valueOf(currencies[1]))
+                            .sellCurrency(Currency.valueOf(currencies[0]))
+                            .build())
+                    .orderList(sell)
+                    .rate(rate)
+                    .build());
+        }
+        return orderResult;
+    }
+
+    private List<OptimalOrderDto> orders(TradesBuyPair trades, boolean buy) {
+        return  trades.getTrades().stream()
+                .map(trade -> OptimalOrderDto.builder()
+                        .marketplace(TradePlatform.BTC_TRADE.name())
+                        .amountToSale(buy ? trade.getCurrencyBase() : trade.getCurrencyTrade())
+                        .amountToBuy(buy ? trade.getCurrencyTrade() : trade.getCurrencyBase())
+                        .rate(trade.getPrice())
+                        .build())
+                .collect(toList());
+    }
+    private Optional<TradesBuyPair> tradeOrders(String pairString, boolean buy) {
+        String url = buy ?
+                BTC_TRADE_URL.concat("sell/").concat(pairString) :
+                BTC_TRADE_URL.concat("buy/").concat(pairString);
+        RestTemplate template = new RestTemplate();
+        TradesBuyPair btcTradeResult = null;
+        int count = 0;
+        while (Objects.isNull(btcTradeResult) && count < 3) {
             try {
                 log.info("Send {} req", url);
                 btcTradeResult = template.getForObject(url, TradesBuyPair.class);

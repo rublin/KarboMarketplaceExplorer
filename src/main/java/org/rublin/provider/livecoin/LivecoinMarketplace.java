@@ -10,6 +10,7 @@ import org.rublin.dto.RateDto;
 import org.rublin.model.LivecoinPairsEntity;
 import org.rublin.provider.AbstractMarketplace;
 import org.rublin.provider.Marketplace;
+import org.rublin.utils.RateUtil;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -162,13 +163,26 @@ public class LivecoinMarketplace extends AbstractMarketplace {
                     orderBook.getAsks().size(),
                     orderBook.getBids().size());
             String[] currencies = pairString.split(INTERNAL_SPLIT);
+            List<OptimalOrderDto> buyOrders = buyOrders(orderBook.getAsks());
+            List<OptimalOrderDto> sellOrders = sellOrders(orderBook.getBids());
+            RateDto rate = RateUtil.createRate(buyOrders.get(0), sellOrders.get(0), Currency.valueOf(currencies[1]), name());
+
+                    /*RateDto.builder()
+                    .origin(Currency.KRB)
+                    .target(Currency.valueOf(currencies[1]))
+                    .saleRate(sellOrders.get(0).getRate())
+                    .buyRate(buyOrders.get(0).getRate())
+                    .marketplace(name())
+                    .info(null)
+                    .build();*/
             orderResult.add(OrderResponseDto.builder()
                     .marketplace(name())
                     .pair(PairDto.builder()
                             .buyCurrency(Currency.valueOf(currencies[0]))
                             .sellCurrency(Currency.valueOf(currencies[1]))
                             .build())
-                    .orderList(buyOrders(orderBook.getAsks()))
+                    .orderList(buyOrders)
+                    .rate(rate)
                     .build());
             orderResult.add(OrderResponseDto.builder()
                     .marketplace(name())
@@ -176,7 +190,8 @@ public class LivecoinMarketplace extends AbstractMarketplace {
                             .buyCurrency(Currency.valueOf(currencies[1]))
                             .sellCurrency(Currency.valueOf(currencies[0]))
                             .build())
-                    .orderList(sellOrders(orderBook.getBids()))
+                    .orderList(sellOrders)
+                    .rate(rate)
                     .build());
         }
         return orderResult;

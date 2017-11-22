@@ -3,6 +3,7 @@ package org.rublin.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
+import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.RateDto;
 
 import java.math.BigDecimal;
@@ -42,5 +43,15 @@ public class RateUtil {
             }
         }
         return withAdditional;
+    }
+
+    public static RateDto createRate(OptimalOrderDto buy, OptimalOrderDto sell, Currency target, TradePlatform platform) {
+        return RateDto.builder()
+                .origin(Currency.KRB)
+                .target(target)
+                .saleRate(sell.getRate())
+                .buyRate(buy.getRate())
+                .marketplace(platform)
+                .build();
     }
 }
