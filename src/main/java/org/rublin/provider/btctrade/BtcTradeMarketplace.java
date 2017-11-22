@@ -7,20 +7,14 @@ import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OrderResponseDto;
 import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
-import org.rublin.provider.Marketplace;
+import org.rublin.model.BtcTradePairsEntity;
+import org.rublin.provider.AbstractMarketplace;
 import org.rublin.utils.RateUtil;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
@@ -28,29 +22,26 @@ import static java.util.stream.Collectors.toMap;
 
 @Slf4j
 @Component("btc")
-public class BtcTradeMarketplace implements Marketplace {
+public class BtcTradeMarketplace extends AbstractMarketplace {
 
     public static final String BTC_TRADE_URL = "https://btc-trade.com.ua/api/trades/";
+    private static final String INTERNAL_SPLIT = "_";
 
-    @Value("${provider.btc-trade.pair}")
-    private String pairString;
+    private final BtcTradePairsEntity entity;
 
-    private List<String> btctradePair;
-
-    @PostConstruct
-    private void init() {
-        String[] pairArray = pairString.split(",");
-        btctradePair = Arrays.asList(pairArray);
+    public BtcTradeMarketplace(BtcTradePairsEntity entity) {
+        this.entity = entity;
+        init();
     }
 
-    @Override
-    public List<String> getAvailablePairs() {
-        return btctradePair;
+    private void init() {
+        String[] pairArray = entity.getPairString().split(",");
+        pairs = Arrays.asList(pairArray);
     }
 
     @Override
     public List<RateDto> rates() {
-        Map<Currency, RateDto> rates = btctradePair.stream()
+        Map<Currency, RateDto> rates = pairs.stream()
 //                .filter(s -> s.contains("KRB"))
                 .map(this::rateByPair)
                 .filter(Objects::nonNull)
@@ -58,35 +49,81 @@ public class BtcTradeMarketplace implements Marketplace {
         return RateUtil.calcAdditionalRates(rates);
     }
 
-    private RateDto rateByPair(String pair) {
-        String[] pairs = pair.split("_");
-        Optional<TradesBuyPair> sellResponse = getResponse(BTC_TRADE_URL.concat("sell/").concat(pair));
-        Optional<TradesBuyPair> buyResponse = getResponse(BTC_TRADE_URL.concat("buy/").concat(pair));
-        if (sellResponse.isPresent() && buyResponse.isPresent()) {
-            BigDecimal buy = sellResponse.get().getMinPrice();
-            BigDecimal sell = buyResponse.get().getMaxPrice();
-            RateDto rate = RateDto.builder()
-                    .saleRate(sell)
-                    .buyRate(buy)
-                    .origin(Currency.valueOf(pairs[0]))
-                    .target(Currency.valueOf(pairs[1]))
-                    .marketplace(TradePlatform.BTC_TRADE)
-                    .build();
-            log.info("Receive {}-{} rate {} {}", rate.getOrigin(), rate.getTarget(), rate.getSaleRate(), rate.getBuyRate());
-            return rate;
-        }
-
-        return null;
-    }
-
     @Override
     public TradePlatform name() {
-        return null;
+        return TradePlatform.BTC_TRADE;
     }
 
     @Override
     public List<OrderResponseDto> trades() {
-        return null;
+        List<OrderResponseDto> trades = pairs.stream()
+                .map(this::createOrderResponse)
+                .flatMap(List::stream)
+                .collect(toList());
+        return trades;
+    }
+
+    private List<OrderResponseDto> createOrderResponse(String pairString) {
+        List<OrderResponseDto> orderResult = new ArrayList<>();
+        Optional<TradesBuyPair> tradesBuy = tradeOrders(pairString, true);
+        Optional<TradesBuyPair> tradesSell = tradeOrders(pairString, false);
+        String[] currencies = pairString.split(INTERNAL_SPLIT);
+        if (tradesBuy.isPresent()) {
+            orderResult.add(OrderResponseDto.builder()
+                    .marketplace(name())
+                    .pair(PairDto.builder()
+                            .buyCurrency(Currency.valueOf(currencies[0]))
+                            .sellCurrency(Currency.valueOf(currencies[1]))
+                            .build())
+                    .orderList(orders(tradesBuy.get(), true))
+                    .build());
+        }
+        if (tradesSell.isPresent()) {
+            orderResult.add(OrderResponseDto.builder()
+                    .marketplace(name())
+                    .pair(PairDto.builder()
+                            .buyCurrency(Currency.valueOf(currencies[1]))
+                            .sellCurrency(Currency.valueOf(currencies[0]))
+                            .build())
+                    .orderList(orders(tradesSell.get(), false))
+                    .build());
+        }
+        return orderResult;
+    }
+
+    private List<OptimalOrderDto> orders(TradesBuyPair trades, boolean buy) {
+        return  trades.getTrades().stream()
+                .map(trade -> OptimalOrderDto.builder()
+                        .marketplace(TradePlatform.BTC_TRADE.name())
+                        .amountToSale(buy ? trade.getCurrencyBase() : trade.getCurrencyTrade())
+                        .amountToBuy(buy ? trade.getCurrencyTrade() : trade.getCurrencyBase())
+                        .rate(trade.getPrice())
+                        .build())
+                .collect(toList());
+    }
+    private Optional<TradesBuyPair> tradeOrders(String pairString, boolean buy) {
+        String url = buy ?
+                BTC_TRADE_URL.concat("sell/").concat(pairString) :
+                BTC_TRADE_URL.concat("buy/").concat(pairString);
+        RestTemplate template = new RestTemplate();
+        TradesBuyPair btcTradeResult = null;
+        int count = 0;
+        while (Objects.isNull(btcTradeResult) && count < 3) {
+            try {
+                log.info("Send {} req", url);
+                btcTradeResult = template.getForObject(url, TradesBuyPair.class);
+            } catch (Throwable e) {
+                log.warn("{} error", e.getMessage());
+                count++;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+
+        return Optional.ofNullable(btcTradeResult);
     }
 
     @Override
@@ -95,7 +132,7 @@ public class BtcTradeMarketplace implements Marketplace {
         Currency buy = pair.getBuyCurrency();
         Currency sell = pair.getSellCurrency();
 
-        Optional<String> supportedPair = btctradePair.stream()
+        Optional<String> supportedPair = pairs.stream()
                 .filter(s -> s.contains(buy.name()) && s.contains(sell.name()))
                 .findFirst();
         if (!supportedPair.isPresent()) {
@@ -128,6 +165,28 @@ public class BtcTradeMarketplace implements Marketplace {
         return result;
     }
 
+    private RateDto rateByPair(String pair) {
+        String[] pairs = pair.split("_");
+        Optional<TradesBuyPair> sellResponse = getResponse(BTC_TRADE_URL.concat("sell/").concat(pair));
+        Optional<TradesBuyPair> buyResponse = getResponse(BTC_TRADE_URL.concat("buy/").concat(pair));
+        if (sellResponse.isPresent() && buyResponse.isPresent()) {
+            BigDecimal buy = sellResponse.get().getMinPrice();
+            BigDecimal sell = buyResponse.get().getMaxPrice();
+            RateDto rate = RateDto.builder()
+                    .saleRate(sell)
+                    .buyRate(buy)
+                    .origin(Currency.valueOf(pairs[0]))
+                    .target(Currency.valueOf(pairs[1]))
+                    .marketplace(TradePlatform.BTC_TRADE)
+                    .build();
+            log.info("Receive {}-{} rate {} {}", rate.getOrigin(), rate.getTarget(), rate.getSaleRate(), rate.getBuyRate());
+            return rate;
+        }
+
+        return null;
+    }
+
+    @Deprecated
     private Optional<TradesBuyPair> getResponse(String url) {
         RestTemplate template = new RestTemplate();
         TradesBuyPair btcTradeResult = null;
