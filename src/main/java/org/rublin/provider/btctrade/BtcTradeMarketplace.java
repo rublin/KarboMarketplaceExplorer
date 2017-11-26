@@ -147,7 +147,7 @@ public class BtcTradeMarketplace extends AbstractMarketplace {
         return Optional.ofNullable(btcTradeResult);
     }
 
-    private List<OrderResponseDto> createOrderResponse(String pairString) {
+    List<OrderResponseDto> createOrderResponse(String pairString) {
         List<OrderResponseDto> orderResult = new ArrayList<>();
         Optional<TradesBuyPair> tradesBuy = tradeOrders(pairString, true);
         Optional<TradesBuyPair> tradesSell = tradeOrders(pairString, false);
@@ -155,7 +155,7 @@ public class BtcTradeMarketplace extends AbstractMarketplace {
         if (tradesBuy.isPresent() && tradesSell.isPresent()) {
             List<OptimalOrderDto> buy = orders(tradesBuy.get(), true);
             List<OptimalOrderDto> sell = orders(tradesSell.get(), false);
-            RateDto rate = RateUtil.createRate(buy.get(0), sell.get(0), Currency.valueOf(currencies[1]), name());
+            RateDto rate = RateUtil.createRate(sell.get(0), buy.get(0), Currency.valueOf(currencies[1]), name());
             orderResult.add(OrderResponseDto.builder()
                     .marketplace(name())
                     .pair(PairDto.builder()
