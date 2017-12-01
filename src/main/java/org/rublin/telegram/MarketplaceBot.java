@@ -9,6 +9,7 @@ import org.rublin.dto.PairDto;
 import org.rublin.dto.RateDto;
 import org.rublin.dto.RateResponseDto;
 import org.rublin.model.TelegramUser;
+import org.rublin.provider.FiatRate;
 import org.rublin.repository.TelegramUserRepository;
 import org.rublin.service.OrderService;
 import org.rublin.service.RateService;
@@ -33,6 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -46,18 +48,20 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private OrderService orderService;
     private TelegramUserRepository repository;
     private RateService rateService;
+    private FiatRate privatRate;
 
     private Map<Long, LinkedList<BotCommands>> commandsHistory = new HashMap<>();
     private ConcurrentMap<Integer, TelegramUser> usersById = new ConcurrentHashMap<>();
     private ConcurrentMap<Long, TelegramUser> chatToUser = new ConcurrentHashMap<>();
     private ConcurrentMap<Integer, Integer> statistic = new ConcurrentHashMap<>();
 
-    public MarketplaceBot(OrderService orderService, TelegramUserRepository repository, RateService rateService, String username, String token) {
+    public MarketplaceBot(OrderService orderService, TelegramUserRepository repository, RateService rateService, FiatRate privatRate, String username, String token) {
         this.orderService = orderService;
         this.username = username;
         this.token = token;
         this.repository = repository;
         this.rateService = rateService;
+        this.privatRate = privatRate;
         init();
     }
 
@@ -78,18 +82,20 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             SendMessage sendMessage = createSendMessage(chatId);
             sendMessage.enableMarkdown(true);
             sendMessage.setText(String.format("Hi, *%s*!\n\n%s", name, message));
-            doExecute(sendMessage);
+            doExecute(Collections.singletonList(sendMessage));
             count++;
         }
         return count;
     }
 
-    private void doExecute(SendMessage sendMessage) {
-        try {
-            this.execute(sendMessage);
-        } catch (TelegramApiException e) {
-            log.error("Execute error {}", e.getMessage());
-        }
+    private void doExecute(List<SendMessage> messages) {
+        messages.forEach(m -> {
+            try {
+                execute(m);
+            } catch (TelegramApiException e) {
+                log.error("Execute error {}", e.getMessage());
+            }
+        });
     }
 
     @Override
@@ -140,52 +146,96 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         log.info("Telegram bot received message {} from {}", message.getText(), message.getFrom());
 
         String text = message.getText().toUpperCase();
-        SendMessage sendMessageRequest;
+        List<SendMessage> messageList = new ArrayList<>();
         LinkedList<BotCommands> commands = commandsHistory.get(message.getChatId());
         BotCommands previousCommand = Objects.nonNull(commands) && !commands.isEmpty() ? commands.getLast() : null;
 
         Currency currency = Currency.getCurrency(text);
         if (text.equals("/START")) {
-            sendMessageRequest = start(message);
+            messageList.add(start(message));
         } else if (text.equals(BotCommands.INFO.name())) {
-            sendMessageRequest = info(message);
+            messageList.add(info(message));
         } else if (text.equals(BotCommands.PRICE.name())) {
             addTOHistory(message.getChatId(), BotCommands.PRICE);
-            sendMessageRequest = price(message);
+            messageList.add(price(message));
         } else if (text.equals(BotCommands.BUY.name())) {
             addTOHistory(message.getChatId(), BotCommands.BUY);
-            sendMessageRequest = buyCommand(message);
+            messageList.add(buyCommand(message));
         } else if (text.equals(BotCommands.SELL.name())) {
             addTOHistory(message.getChatId(), BotCommands.SELL);
-            sendMessageRequest = sellCommand(message);
+            messageList.add(sellCommand(message));
         } else if (Objects.nonNull(currency)
                 && Objects.nonNull(previousCommand)
                 && previousCommand == BotCommands.BUY) {
             addTOHistory(message.getChatId(), BotCommands.valueOf("BUY_FOR_".concat(currency.name())));
-            sendMessageRequest = amount(message, currency);
+            messageList.add(amount(message, currency));
         } else if (Objects.nonNull(currency)
                 && Objects.nonNull(previousCommand)
                 && previousCommand == BotCommands.SELL) {
             addTOHistory(message.getChatId(), BotCommands.valueOf("SELL_FOR_".concat(currency.name())));
-            sendMessageRequest = amount(message, Currency.KRB);
+            messageList.add(amount(message, Currency.KRB));
         } else {
             if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("BUY_FOR_")) {
                 String currencyStr = previousCommand.toString().substring(8);
+                Currency toCurrency = Currency.valueOf(currencyStr);
                 log.info("Received BUY request for {} currency and {} amount", currencyStr, text);
-                sendMessageRequest = buyCommand(message, Currency.valueOf(currencyStr));
+                Optional<BigDecimal> amountOpt = getAmount(text);
+                if (amountOpt.isPresent()) {
+                    BigDecimal amount = amountOpt.get();
+                    messageList.add(buyCommand(message, amount, toCurrency));
+                    if (toCurrency == Currency.UAH) {
+                        RateDto rate = privatRate.rate(PairDto.builder()
+                                .sellCurrency(Currency.UAH)
+                                .buyCurrency(Currency.USD)
+                                .build());
+                        if (Objects.nonNull(rate)) {
+                            amount = amount.divide(rate.getBuyRate(), BigDecimal.ROUND_HALF_UP);
+                            messageList.add(buyCommand(message, amount, Currency.USD));
+                        }
+                    } else if (toCurrency == Currency.USD) {
+                        RateDto rate = privatRate.rate(PairDto.builder()
+                                .sellCurrency(Currency.UAH)
+                                .buyCurrency(Currency.USD)
+                                .build());
+                        if (Objects.nonNull(rate)) {
+                            amount = amount.multiply(rate.getSaleRate());
+                            messageList.add(buyCommand(message, amount, Currency.UAH));
+                        }
+                    }
+                } else {
+                    messageList.add(amountError(message));
+                }
+
                 clearHistory(message.getChatId());
             } else if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("SELL_FOR_")) {
                 String currencyStr = previousCommand.toString().substring(9);
                 log.info("Received BUY request for {} currency and {} amount", currencyStr, text);
-                sendMessageRequest = sellCommand(message, Currency.valueOf(currencyStr));
+                messageList.add(sellCommand(message, Currency.valueOf(currencyStr)));
                 clearHistory(message.getChatId());
             } else {
                 clearHistory(message.getChatId());
-                sendMessageRequest = defaultCommand(message);
+                messageList.add(defaultCommand(message));
             }
         }
 
-        doExecute(sendMessageRequest);
+        doExecute(messageList);
+    }
+
+    private SendMessage amountError(Message message) {
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+        sendMessage.setText("Amount format is wrong. Please, use only digitals and . as a separator");
+        return sendMessage;
+    }
+
+    private Optional<BigDecimal> getAmount(String text) {
+        BigDecimal amount = null;
+        try {
+            String strAmount = text.replaceAll(",", ".");
+            amount = BigDecimal.valueOf(Double.valueOf(strAmount));
+        } catch (Exception e) {
+            log.warn("Wrong amount {} format: {}", text, e.getMessage());
+        }
+        return Optional.ofNullable(amount);
     }
 
     private SendMessage info(Message message) {
@@ -240,11 +290,11 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         return "anonymous user";
     }
 
-    private SendMessage buyCommand(Message message, Currency currency) {
+    private SendMessage buyCommand(Message message, BigDecimal amount, Currency currency) {
         String text = message.getText();
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
         try {
-            BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
+//            BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
             OptimalOrdersResult optimalOrders = orderService.findOptimalOrders(PairDto.builder()
                             .buyCurrency(Currency.KRB)
                             .sellCurrency(currency)

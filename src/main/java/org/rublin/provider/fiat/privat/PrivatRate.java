@@ -40,7 +40,10 @@ public class PrivatRate implements FiatRate {
 
     @Override
     public RateDto rate(PairDto pair) {
-        return null;
+        return allRates().stream()
+                .filter(r -> (r.getTarget() == pair.getBuyCurrency() || r.getOrigin() == pair.getBuyCurrency()) &&
+                        (r.getTarget() == pair.getSellCurrency() || r.getOrigin() == pair.getSellCurrency()))
+                .findFirst().orElse(null);
     }
 
     private List<PrivatRateRsp> getRate() {

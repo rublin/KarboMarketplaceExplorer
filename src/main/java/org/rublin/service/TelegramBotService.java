@@ -1,6 +1,7 @@
 package org.rublin.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.rublin.provider.FiatRate;
 import org.rublin.repository.TelegramUserRepository;
 import org.rublin.telegram.MarketplaceBot;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class TelegramBotService {
     @Autowired
     private RateService rateService;
 
+    @Autowired
+    private FiatRate fiatRate;
+
     private TelegramBotsApi telegramBotsApi;
 
     public int sendMessage(String message) {
@@ -44,7 +48,7 @@ public class TelegramBotService {
         ApiContextInitializer.init();
         telegramBotsApi = new TelegramBotsApi();
         try {
-            bot = new MarketplaceBot(orderService, repository, rateService, username, token);
+            bot = new MarketplaceBot(orderService, repository, rateService, fiatRate, username, token);
             telegramBotsApi.registerBot(bot);
             log.info("Telegram bot register success");
         } catch (TelegramApiRequestException e) {

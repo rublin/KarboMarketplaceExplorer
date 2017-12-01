@@ -6,6 +6,7 @@ import org.rublin.dto.OptimalOrdersResult;
 import org.rublin.dto.OrderResponseDto;
 import org.rublin.dto.PairDto;
 import org.rublin.provider.MarketplaceService;
+import org.rublin.provider.fiat.privat.PrivatRate;
 import org.rublin.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
