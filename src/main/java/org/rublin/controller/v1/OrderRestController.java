@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = OrderRestController.URL, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -26,8 +27,8 @@ public class OrderRestController extends AbstractController {
     private OrderService orderService;
 
     @RequestMapping(value = "/sell", method = RequestMethod.GET)
-    public OptimalOrdersResult findOptimalSellOrders(@RequestParam(value = "currency") String currency,
-                                                     @RequestParam(value = "amount") BigDecimal amount) {
+    public List<OptimalOrdersResult> findOptimalSellOrders(@RequestParam(value = "currency") String currency,
+                                      @RequestParam(value = "amount") BigDecimal amount) {
         PairDto pair = PairDto.builder()
                 .sellCurrency(Currency.KRB)
                 .buyCurrency(Currency.valueOf(currency.toUpperCase()))
@@ -36,7 +37,7 @@ public class OrderRestController extends AbstractController {
     }
 
     @RequestMapping(value = "/buy", method = RequestMethod.GET)
-    public OptimalOrdersResult findOptimalBuyOrders(@RequestParam(value = "currency") String  currency,
+    public List<OptimalOrdersResult> findOptimalBuyOrders(@RequestParam(value = "currency") String  currency,
                                                     @RequestParam(value = "amount") BigDecimal amount) {
         PairDto pair = PairDto.builder()
                 .sellCurrency(Currency.valueOf(currency.toUpperCase()))

@@ -41,7 +41,9 @@ public class MarketplaceServiceImpl implements MarketplaceService {
 
     @Override
     public void createCache() {
-        List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
+        List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace,
+                livecoinMarketplace,
+                btcTradeMarketplace);
         ExecutorService executorService = Executors.newFixedThreadPool(marketplaces.size());
         List<CompletableFuture<List<OrderResponseDto>>> futures = marketplaces.stream().map(
                 m -> CompletableFuture.supplyAsync(m::trades, executorService)

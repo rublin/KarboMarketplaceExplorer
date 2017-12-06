@@ -1,21 +1,16 @@
 package org.rublin.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.rublin.dto.OptimalOrderDto;
-import org.rublin.dto.OptimalOrdersResult;
-import org.rublin.dto.OrderResponseDto;
-import org.rublin.dto.PairDto;
+import org.rublin.Currency;
+import org.rublin.dto.*;
+import org.rublin.provider.FiatRate;
 import org.rublin.provider.MarketplaceService;
-import org.rublin.provider.fiat.privat.PrivatRate;
 import org.rublin.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
@@ -26,8 +21,66 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private MarketplaceService marketplaceService;
 
+    @Autowired
+    private FiatRate fiatRate;
+
     @Override
-    public OptimalOrdersResult findOptimalOrders(PairDto pair, BigDecimal amount) {
+    public List<OptimalOrdersResult> findOptimalOrders(PairDto pair, BigDecimal amount) {
+        List<OptimalOrdersResult> results = new LinkedList<>();
+        results.add(optimalOrder(pair, amount));
+        RateDto rate = fiatRate.rate(PairDto.builder()
+                .sellCurrency(Currency.UAH)
+                .buyCurrency(Currency.USD)
+                .build());
+        // Bought order - fiat can be as sell currency
+        if (pair.isBought()) {
+            if (pair.getSellCurrency() == Currency.UAH) {
+                if (Objects.nonNull(rate)) {
+                    amount = amount.divide(rate.getBuyRate(), BigDecimal.ROUND_HALF_UP);
+                    results.add(optimalOrder(PairDto.builder()
+                                    .buyCurrency(pair.getBuyCurrency())
+                                    .sellCurrency(Currency.USD)
+                                    .build(),
+                            amount));
+                }
+            } else if (pair.getSellCurrency() == Currency.USD) {
+                if (Objects.nonNull(rate)) {
+                    amount = amount.multiply(rate.getSaleRate());
+                    results.add(optimalOrder(PairDto.builder()
+                                    .buyCurrency(pair.getBuyCurrency())
+                                    .sellCurrency(Currency.UAH)
+                                    .build(),
+                            amount));
+                }
+            }
+
+        } else {
+            if (pair.getBuyCurrency() == Currency.UAH) {
+                if (Objects.nonNull(rate)) {
+                    OptimalOrdersResult optimalOrdersResult = optimalOrder(PairDto.builder()
+                                    .buyCurrency(Currency.USD)
+                                    .sellCurrency(pair.getSellCurrency())
+                                    .build(),
+                            amount);
+                    optimalOrdersResult.setAmountBuy(optimalOrdersResult.getAmountBuy().multiply(rate.getSaleRate()));
+                    results.add(optimalOrdersResult);
+                }
+            } else if (pair.getBuyCurrency() == Currency.USD) {
+                if (Objects.nonNull(rate)) {
+                    OptimalOrdersResult optimalOrdersResult = optimalOrder(PairDto.builder()
+                                    .buyCurrency(Currency.UAH)
+                                    .sellCurrency(pair.getSellCurrency())
+                                    .build(),
+                            amount);
+                    optimalOrdersResult.setAmountBuy(optimalOrdersResult.getAmountBuy().divide(rate.getBuyRate(), BigDecimal.ROUND_HALF_UP));
+                    results.add(optimalOrdersResult);
+                }
+            }
+        }
+        return results;
+    }
+
+    private OptimalOrdersResult optimalOrder(PairDto pair, BigDecimal amount) {
         List<OptimalOrderDto> orders = marketplaceService.orders(pair).stream()
                 .map(OrderResponseDto::getOrderList)
                 .flatMap(List::stream)
@@ -53,7 +106,19 @@ public class OrderServiceImpl implements OrderService {
                 break;
             }
         }
+        BigDecimal sale = BigDecimal.ZERO;
+        BigDecimal buy = BigDecimal.ZERO;
+        for (OptimalOrderDto optimalOrder : limitedOrders) {
+            sale = sale.add(optimalOrder.getAmountToSale());
+            buy = buy.add(optimalOrder.getAmountToBuy());
+        }
 
+        log.info("Found {} optiomalOrders. Sell {}{}, Buy {}{}",
+                limitedOrders.size(),
+                sale,
+                pair.getSellCurrency(),
+                buy,
+                pair.getBuyCurrency());
         return OptimalOrdersResult.builder()
                 .pair(pair)
                 .amountSell(sellAmount.stripTrailingZeros())

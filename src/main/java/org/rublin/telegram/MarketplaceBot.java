@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -295,14 +296,18 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
         try {
 //            BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
-            OptimalOrdersResult optimalOrders = orderService.findOptimalOrders(PairDto.builder()
+            List<OptimalOrdersResult> optimalOrders = orderService.findOptimalOrders(PairDto.builder()
                             .buyCurrency(Currency.KRB)
                             .sellCurrency(currency)
                             .build(),
                     amount);
             sendMessage.enableMarkdown(true);
 //            sendMessage.setText("333.8251900000UAH -> 844.5777300000KRB => BTCTRADE");
-            sendMessage.setText(createOrdersResponse(optimalOrders));
+            String response = optimalOrders.stream()
+                    .map(this::createOrdersResponse)
+//                    .reduce("\n\n", String::concat);
+                    .collect(Collectors.joining("\n\n"));
+            sendMessage.setText(response);
         } catch (Exception e) {
             log.warn("Unexpected exception {}", e.getMessage());
             log.debug("Exception {}", e);
@@ -316,14 +321,17 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
         try {
             BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
-            OptimalOrdersResult optimalOrders = orderService.findOptimalOrders(PairDto.builder()
+            List<OptimalOrdersResult> optimalOrders = orderService.findOptimalOrders(PairDto.builder()
                             .buyCurrency(currency)
                             .sellCurrency(Currency.KRB)
                             .build(),
                     amount);
             sendMessage.enableMarkdown(true);
-//            sendMessage.setText("333.8251900000UAH -> 844.5777300000KRB => BTCTRADE");
-            sendMessage.setText(createOrdersResponse(optimalOrders));
+            String response = optimalOrders.stream()
+                    .map(this::createOrdersResponse)
+//                    .reduce("\n\n", String::concat);
+                    .collect(Collectors.joining("\n\n"));
+            sendMessage.setText(response);
         } catch (Exception e) {
             log.warn("Unexpected exception {}", e.getMessage());
             log.debug("Exception {}", e);

@@ -4,6 +4,7 @@ import org.rublin.dto.OptimalOrdersResult;
 import org.rublin.dto.PairDto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface OrderService {
 
@@ -13,5 +14,5 @@ public interface OrderService {
      * @param amount {@link BigDecimal} amount
      * @return {@link OptimalOrdersResult}
      */
-    OptimalOrdersResult findOptimalOrders(PairDto pair, BigDecimal amount);
+    List<OptimalOrdersResult> findOptimalOrders(PairDto pair, BigDecimal amount);
 }
