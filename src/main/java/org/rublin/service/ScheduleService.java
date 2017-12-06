@@ -19,11 +19,11 @@ public class ScheduleService {
     @Autowired
     private MarketplaceService marketplaceService;
 
-    @Scheduled(cron = "0 1 12 6 * *")
+    @Scheduled(cron = "0 30 15 6 * *")
 //    @Scheduled(fixedRate = 60000)
     public void askForDonation() {
-        String message = "Do you like to use this bot? I hope so...\n" +
-                "Address (KRB) for donate\n\n" +
+        String message = "Do you like using this bot? Hope so...\n" +
+                "KARBO address (KRB) for donation\n\n" +
                 "*donate.rublin.org* or\n" +
                 "*KaAxHCPtJaFGDq4xLn3fASf3zVrAmqyE4359zn3r3deVjCeM3CYq7K4Y1pkfZkjfRd1W2VPXVZdA5RBdpc4Vzamo1H4F5qZ*";
         log.info("Ask for donation: \n {}", message);
