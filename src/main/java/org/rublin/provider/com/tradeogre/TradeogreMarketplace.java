@@ -79,8 +79,8 @@ public class TradeogreMarketplace extends AbstractMarketplace {
                 .sellCurrency(Currency.valueOf(pair[1]))
                 .buyCurrency(Currency.valueOf(pair[0]))
                 .build();
-        List<OptimalOrderDto> buy = orderResponse(orders.getBuy(), buyPair);
-        List<OptimalOrderDto> sell = orderResponse(orders.getSell(), sellPair);
+        List<OptimalOrderDto> sell = orderResponse(orders.getBuy(), sellPair);
+        List<OptimalOrderDto> buy = orderResponse(orders.getSell(), buyPair);
         RateDto rate = RateUtil.createRate(buy.get(0), sell.get(0), Currency.valueOf(pair[0]), name());
         return Arrays.asList(OrderResponseDto.builder()
                         .marketplace(name())
@@ -111,8 +111,8 @@ public class TradeogreMarketplace extends AbstractMarketplace {
                         .build())
                 .sorted(((o1, o2) ->
                         pair.isBought() ?
-                                (o2.getRate().compareTo(o1.getRate())) :
-                                (o1.getRate().compareTo(o2.getRate()))))
+                                (o1.getRate().compareTo(o2.getRate())) :
+                                (o2.getRate().compareTo(o1.getRate()))))
                 .collect(toList());
         log.info("Found {} {} orders", optimalOrders.size(), pair.isBought() ? "bought" : "sell");
         return optimalOrders;

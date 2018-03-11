@@ -166,15 +166,6 @@ public class LivecoinMarketplace extends AbstractMarketplace {
             List<OptimalOrderDto> buyOrders = buyOrders(orderBook.getAsks());
             List<OptimalOrderDto> sellOrders = sellOrders(orderBook.getBids());
             RateDto rate = RateUtil.createRate(buyOrders.get(0), sellOrders.get(0), Currency.valueOf(currencies[1]), name());
-
-                    /*RateDto.builder()
-                    .origin(Currency.KRB)
-                    .target(Currency.valueOf(currencies[1]))
-                    .saleRate(sellOrders.get(0).getRate())
-                    .buyRate(buyOrders.get(0).getRate())
-                    .marketplace(name())
-                    .info(null)
-                    .build();*/
             orderResult.add(OrderResponseDto.builder()
                     .marketplace(name())
                     .pair(PairDto.builder()
