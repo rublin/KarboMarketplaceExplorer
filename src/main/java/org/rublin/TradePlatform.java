@@ -4,5 +4,6 @@ public enum TradePlatform {
     BTC_TRADE,
     CRYPTOPIA,
     LIVECOIN,
-    TRADEOGRE
+    TRADEOGRE,
+    CREX_24
 }

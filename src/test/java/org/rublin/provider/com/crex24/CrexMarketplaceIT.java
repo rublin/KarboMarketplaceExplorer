@@ -1,4 +1,4 @@
-package org.rublin.provider.com.tradeogre;
+package org.rublin.provider.com.crex24;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,10 +8,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
-public class TradeogreMarketplaceIT extends AbstractProviderTest {
+public class CrexMarketplaceIT extends AbstractProviderTest {
 
     @Test
     public void order() throws Exception {
-        orderTest(tradeogreMarketplace);
+        orderTest(crexMarketplace);
     }
 }

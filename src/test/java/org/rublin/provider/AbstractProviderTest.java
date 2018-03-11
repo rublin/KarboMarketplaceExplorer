@@ -3,6 +3,7 @@ package org.rublin.provider;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
 import org.rublin.dto.OptimalOrderDto;
+import org.rublin.dto.OrderResponseDto;
 import org.rublin.dto.PairDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,9 +32,24 @@ public class AbstractProviderTest {
     @Qualifier("tradeogre")
     protected Marketplace tradeogreMarketplace;
 
+    @Autowired
+    @Qualifier("crex")
+    protected Marketplace crexMarketplace;
+
+    protected void orderTest(Marketplace marketplace) {
+        for (OrderResponseDto orderResponse : marketplace.trades()) {
+            PairDto pair = orderResponse.getPair();
+            List<OptimalOrderDto> orderList = orderResponse.getOrderList();
+            if (pair.getSellCurrency() == Currency.KRB)
+                sell(orderList, marketplace.name(), pair);
+            else
+                buy(orderList, marketplace.name(), pair);
+        }
+    }
+
     public void sell(List<OptimalOrderDto> orders, TradePlatform platform, PairDto pair) {
         assertTrue(Objects.nonNull(orders));
-        assertTrue(orders.size() > 5);
+        assertTrue(orders.size() > 1);
         OptimalOrderDto firstOrder = orders.get(0);
         OptimalOrderDto secondOrder = orders.get(1);
         if (pair.getBuyCurrency() == Currency.UAH) {

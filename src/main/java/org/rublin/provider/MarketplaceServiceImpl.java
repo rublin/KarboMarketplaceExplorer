@@ -37,7 +37,11 @@ public class MarketplaceServiceImpl implements MarketplaceService {
 
     @Autowired
     @Qualifier("tradeogre")
-    private Marketplace tradeogre;
+    private Marketplace tradeogreMarketplace;
+
+    @Autowired
+    @Qualifier("crex")
+    protected Marketplace crexMarketplace;
 
     private Map<TradePlatform, List<OrderResponseDto>> marketplaceCache = new ConcurrentHashMap<>();
 
@@ -47,7 +51,8 @@ public class MarketplaceServiceImpl implements MarketplaceService {
         List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace,
                 livecoinMarketplace,
                 btcTradeMarketplace,
-                tradeogre);
+                tradeogreMarketplace,
+                crexMarketplace);
         ExecutorService executorService = Executors.newFixedThreadPool(marketplaces.size());
         List<CompletableFuture<List<OrderResponseDto>>> futures = marketplaces.stream().map(
                 m -> CompletableFuture.supplyAsync(m::trades, executorService)
