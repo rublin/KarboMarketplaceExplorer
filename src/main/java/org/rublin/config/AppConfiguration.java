@@ -18,7 +18,7 @@ public class AppConfiguration {
 
     @Bean
     public TradeogreApi cloudFlareApi() {
-        return RetrofitBuilder.build(TradeogreApi.class, TRADEOGRE_URL, 5, TimeUnit.SECONDS, mapper());
+        return RetrofitBuilder.build(TradeogreApi.class, TRADEOGRE_URL, 40, TimeUnit.SECONDS, mapper());
     }
 
     @Bean
