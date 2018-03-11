@@ -2,7 +2,6 @@ package org.rublin.provider;
 
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.TradePlatform;
-import org.rublin.dto.OptimalOrderDto;
 import org.rublin.dto.OrderResponseDto;
 import org.rublin.dto.PairDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +35,10 @@ public class MarketplaceServiceImpl implements MarketplaceService {
     @Qualifier("livecoin")
     private Marketplace livecoinMarketplace;
 
+    @Autowired
+    @Qualifier("tradeogre")
+    private Marketplace tradeogre;
+
     private Map<TradePlatform, List<OrderResponseDto>> marketplaceCache = new ConcurrentHashMap<>();
 
 
@@ -43,7 +46,8 @@ public class MarketplaceServiceImpl implements MarketplaceService {
     public void createCache() {
         List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace,
                 livecoinMarketplace,
-                btcTradeMarketplace);
+                btcTradeMarketplace,
+                tradeogre);
         ExecutorService executorService = Executors.newFixedThreadPool(marketplaces.size());
         List<CompletableFuture<List<OrderResponseDto>>> futures = marketplaces.stream().map(
                 m -> CompletableFuture.supplyAsync(m::trades, executorService)

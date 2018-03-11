@@ -19,7 +19,7 @@ public class ScheduleService {
     @Autowired
     private MarketplaceService marketplaceService;
 
-    @Scheduled(cron = "0 30 15 6 * *")
+ //   @Scheduled(cron = "0 30 15 6 * *")
 //    @Scheduled(fixedRate = 60000)
     public void askForDonation() {
         String message = "Do you like using this bot? Hope so...\n" +
