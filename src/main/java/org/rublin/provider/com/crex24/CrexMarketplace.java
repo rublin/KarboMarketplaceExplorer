@@ -16,10 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
@@ -68,7 +65,9 @@ public class CrexMarketplace extends AbstractMarketplace {
 
     List<OrderResponseDto> createOrderResponse(String pairString) {
         OrderBook orders = executor.execute(
-                api.orders()
+                api.orders(Crex24Query.builder()
+                        .pairName(pairString)
+                        .build())
         );
         String[] pair = pairString.split(INTERNAL_SPLIT);
         PairDto buyPair = PairDto.builder()
