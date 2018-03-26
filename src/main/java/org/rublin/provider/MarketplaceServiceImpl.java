@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -44,16 +45,11 @@ public class MarketplaceServiceImpl implements MarketplaceService {
     protected Marketplace crexMarketplace;
 
     private Map<TradePlatform, List<OrderResponseDto>> marketplaceCache = new ConcurrentHashMap<>();
-
+    private List<Marketplace> marketplaces;
+    private ExecutorService executorService;
 
     @Override
     public void createCache() {
-        List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace,
-                livecoinMarketplace,
-                btcTradeMarketplace,
-                tradeogreMarketplace,
-                crexMarketplace);
-        ExecutorService executorService = Executors.newFixedThreadPool(marketplaces.size());
         List<CompletableFuture<List<OrderResponseDto>>> futures = marketplaces.stream().map(
                 m -> CompletableFuture.supplyAsync(m::trades, executorService)
                 .applyToEither(timeoutAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS), Function.identity())
@@ -104,5 +100,16 @@ public class MarketplaceServiceImpl implements MarketplaceService {
         CompletableFuture<T> result = new CompletableFuture<>();
         delayer.schedule(() -> result.completeExceptionally(new TimeoutException("Timeout after " + timeout)), timeout, unit);
         return result;
+    }
+
+    @PostConstruct
+    private void init() {
+        marketplaces = Arrays.asList(cryptopiaMarketplace,
+                livecoinMarketplace,
+                btcTradeMarketplace,
+                tradeogreMarketplace,
+                crexMarketplace);
+
+        executorService = Executors.newFixedThreadPool(marketplaces.size());
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 public class MarketplaceImpl implements Marketplace {
 
     private static final long TIMEOUT_SECONDS = 60;
+
     @Autowired
     @Qualifier("btc")
     private Marketplace btcTradeMarketplace;
@@ -42,6 +44,17 @@ public class MarketplaceImpl implements Marketplace {
     @Autowired
     @Qualifier("livecoin")
     private Marketplace livecoinMarketplace;
+
+    @Autowired
+    @Qualifier("tradeogre")
+    private Marketplace tradeogreMarketplace;
+
+    @Autowired
+    @Qualifier("crex")
+    protected Marketplace crexMarketplace;
+
+    private List<Marketplace> marketplaces;
+    private ExecutorService executorService;
 
     @Override
     public TradePlatform name() {
@@ -55,17 +68,15 @@ public class MarketplaceImpl implements Marketplace {
 
     @Override
     public List<OptimalOrderDto> tradesByPair(PairDto pair) {
-        final List<Marketplace> marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace);
-        ExecutorService executorService = Executors.newFixedThreadPool(3);
 
         List<CompletableFuture<List<OptimalOrderDto>>> futures = marketplaces.stream().map(
                 m -> CompletableFuture.supplyAsync(() ->
-                m.tradesByPair(pair), executorService)
-                .applyToEither(timeoutAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS), Function.identity())
-                .exceptionally(error -> {
-                    log.warn("Failed getOneSegmentDetails: " + error);
-                    return Collections.emptyList();
-                }))
+                        m.tradesByPair(pair), executorService)
+                        .applyToEither(timeoutAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS), Function.identity())
+                        .exceptionally(error -> {
+                            log.warn("Failed getOneSegmentDetails: " + error);
+                            return Collections.emptyList();
+                        }))
                 .collect(Collectors.toList());
 
         List<OptimalOrderDto> collect = futures.stream()
@@ -73,11 +84,9 @@ public class MarketplaceImpl implements Marketplace {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        executorService.shutdown();
+//        executorService.shutdown();
         return collect;
     }
-
-//    public List<OptimalOrderDto> tradesByPair(PairDto pair, Marketplace marketplace)
 
     @Override
     public List<String> getAvailablePairs() {
@@ -107,11 +116,17 @@ public class MarketplaceImpl implements Marketplace {
         return collect;
     }
 
-    private  <T> CompletableFuture<T> timeoutAfter(long timeout, TimeUnit unit) {
+    private <T> CompletableFuture<T> timeoutAfter(long timeout, TimeUnit unit) {
         ScheduledThreadPoolExecutor delayer = new ScheduledThreadPoolExecutor(1);
 
         CompletableFuture<T> result = new CompletableFuture<>();
         delayer.schedule(() -> result.completeExceptionally(new TimeoutException("Timeout after " + timeout)), timeout, unit);
         return result;
+    }
+
+    @PostConstruct
+    private void init() {
+        marketplaces = Arrays.asList(cryptopiaMarketplace, livecoinMarketplace, btcTradeMarketplace, crexMarketplace, tradeogreMarketplace);
+        executorService = Executors.newFixedThreadPool(marketplaces.size());
     }
 }

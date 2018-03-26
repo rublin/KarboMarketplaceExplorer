@@ -14,7 +14,7 @@ public class CryptopiaMarketplaceTest {
 
     private CryptorpiaPairsEntity pairs() {
         CryptorpiaPairsEntity entity = new CryptorpiaPairsEntity();
-        entity.setPairString("KRB_BTC,KRB_LTC,KRB_DOGE");
+        entity.setPairString("KRB_BTC");
         return entity;
     }
 
@@ -32,9 +32,7 @@ public class CryptopiaMarketplaceTest {
     public void getAvailablePairs() {
         List<String> availablePairs = marketplace.getAvailablePairs();
         assertFalse(availablePairs.isEmpty());
-        assertEquals(3, availablePairs.size());
+        assertEquals(1, availablePairs.size());
         assertEquals("KRB_BTC", availablePairs.get(0));
-        assertEquals("KRB_LTC", availablePairs.get(1));
-        assertEquals("KRB_DOGE", availablePairs.get(2));
     }
 }
