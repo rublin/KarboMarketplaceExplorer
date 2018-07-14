@@ -3,11 +3,7 @@ package org.rublin.telegram;
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
-import org.rublin.dto.OptimalOrderDto;
-import org.rublin.dto.OptimalOrdersResult;
-import org.rublin.dto.PairDto;
-import org.rublin.dto.RateDto;
-import org.rublin.dto.RateResponseDto;
+import org.rublin.dto.*;
 import org.rublin.model.TelegramUser;
 import org.rublin.provider.FiatRate;
 import org.rublin.repository.TelegramUserRepository;
@@ -25,16 +21,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -44,6 +31,7 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 public class MarketplaceBot extends TelegramLongPollingBot {
 
+    private static final int MAX_ORDERS_IN_MESSAGE = 50;
     private String username;
     private String token;
     private OrderService orderService;
@@ -94,7 +82,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             try {
                 execute(m);
             } catch (TelegramApiException e) {
-                log.error("Execute error {}", e.getMessage());
+                log.error("Execute error {}", e);
             }
         });
     }
@@ -210,7 +198,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 clearHistory(message.getChatId());
             } else if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("SELL_FOR_")) {
                 String currencyStr = previousCommand.toString().substring(9);
-                log.info("Received BUY request for {} currency and {} amount", currencyStr, text);
+                log.info("Received SELL request for {} currency and {} amount", currencyStr, text);
                 messageList.add(sellCommand(message, Currency.valueOf(currencyStr)));
                 clearHistory(message.getChatId());
             } else {
@@ -292,7 +280,6 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     }
 
     private SendMessage buyCommand(Message message, BigDecimal amount, Currency currency) {
-        String text = message.getText();
         SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
         try {
 //            BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
@@ -388,7 +375,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         builder.append("*\n\n");
 
         builder.append("*Rate* -> *Amount to sell* -> *Amount to buy* => *Trade platform*\n");
-        if (optimalOrders.getOptimalOrders().size() < 80) {
+        if (optimalOrders.getOptimalOrders().size() < MAX_ORDERS_IN_MESSAGE) {
             for (OptimalOrderDto order : optimalOrders.getOptimalOrders()) {
                 builder.append(order.getRate().stripTrailingZeros().toPlainString());
                 builder.append(" -> ");
@@ -398,7 +385,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 builder.append(" => *").append(order.getMarketplace()).append("*\n");
             }
         } else {
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < MAX_ORDERS_IN_MESSAGE; i++) {
                 OptimalOrderDto order = optimalOrders.getOptimalOrders().get(i);
                 builder.append(order.getRate().stripTrailingZeros().toPlainString());
                 builder.append(" -> ");
@@ -408,7 +395,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 builder.append(" => *").append(order.getMarketplace()).append("*\n");
             }
 
-            builder.append("\n\nThere are ").append(optimalOrders.getOptimalOrders().size() - 50);
+            builder.append("\n\nThere are ").append(optimalOrders.getOptimalOrders().size() - MAX_ORDERS_IN_MESSAGE);
             builder.append(" another orders");
         }
 
