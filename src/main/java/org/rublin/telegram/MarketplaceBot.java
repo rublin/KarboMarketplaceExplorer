@@ -1,5 +1,6 @@
 package org.rublin.telegram;
 
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
@@ -171,7 +172,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 Optional<BigDecimal> amountOpt = getAmount(text);
                 if (amountOpt.isPresent()) {
                     BigDecimal amount = amountOpt.get();
-                    messageList.add(buyCommand(message, amount, toCurrency));
+                    messageList.addAll(buyCommand(message, amount, toCurrency));
                     if (toCurrency == Currency.UAH) {
                         RateDto rate = privatRate.rate(PairDto.builder()
                                 .sellCurrency(Currency.UAH)
@@ -179,7 +180,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                                 .build());
                         if (Objects.nonNull(rate)) {
                             amount = amount.divide(rate.getBuyRate(), BigDecimal.ROUND_HALF_UP);
-                            messageList.add(buyCommand(message, amount, Currency.USD));
+                            messageList.addAll(buyCommand(message, amount, Currency.USD));
                         }
                     } else if (toCurrency == Currency.USD) {
                         RateDto rate = privatRate.rate(PairDto.builder()
@@ -188,7 +189,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                                 .build());
                         if (Objects.nonNull(rate)) {
                             amount = amount.multiply(rate.getSaleRate());
-                            messageList.add(buyCommand(message, amount, Currency.UAH));
+                            messageList.addAll(buyCommand(message, amount, Currency.UAH));
                         }
                     }
                 } else {
@@ -199,7 +200,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             } else if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("SELL_FOR_")) {
                 String currencyStr = previousCommand.toString().substring(9);
                 log.info("Received SELL request for {} currency and {} amount", currencyStr, text);
-                messageList.add(sellCommand(message, Currency.valueOf(currencyStr)));
+                messageList.addAll(sellCommand(message, Currency.valueOf(currencyStr)));
                 clearHistory(message.getChatId());
             } else {
                 clearHistory(message.getChatId());
@@ -279,8 +280,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         return "anonymous user";
     }
 
-    private SendMessage buyCommand(Message message, BigDecimal amount, Currency currency) {
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+    private List<SendMessage> buyCommand(Message message, BigDecimal amount, Currency currency) {
         try {
 //            BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
             List<OptimalOrdersResult> optimalOrders = orderService.findOptimalOrders(PairDto.builder()
@@ -288,24 +288,19 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                             .sellCurrency(currency)
                             .build(),
                     amount);
-            sendMessage.enableMarkdown(true);
-//            sendMessage.setText("333.8251900000UAH -> 844.5777300000KRB => BTCTRADE");
-            String response = optimalOrders.stream()
-                    .map(this::createOrdersResponse)
-//                    .reduce("\n\n", String::concat);
-                    .collect(Collectors.joining("\n\n"));
-            sendMessage.setText(response);
+
+            return splitAndPrepare(optimalOrders, message);
         } catch (Exception e) {
             log.warn("Unexpected exception {}", e.getMessage());
             log.debug("Exception {}", e);
+            SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
             sendMessage.setText("Something wrong, try again");
+            return Collections.singletonList(sendMessage);
         }
-        return sendMessage;
     }
 
-    private SendMessage sellCommand(Message message, Currency currency) {
+    private List<SendMessage> sellCommand(Message message, Currency currency) {
         String text = message.getText();
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
         try {
             BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
             List<OptimalOrdersResult> optimalOrders = orderService.findOptimalOrders(PairDto.builder()
@@ -313,18 +308,28 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                             .sellCurrency(Currency.KRB)
                             .build(),
                     amount);
-            sendMessage.enableMarkdown(true);
-            String response = optimalOrders.stream()
-                    .map(this::createOrdersResponse)
-//                    .reduce("\n\n", String::concat);
-                    .collect(Collectors.joining("\n\n"));
-            sendMessage.setText(response);
+            return splitAndPrepare(optimalOrders, message);
         } catch (Exception e) {
             log.warn("Unexpected exception {}", e.getMessage());
             log.debug("Exception {}", e);
+            SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
             sendMessage.setText("Something wrong, try again");
+            return Collections.singletonList(sendMessage);
         }
-        return sendMessage;
+    }
+
+    private List<SendMessage> splitAndPrepare(List<OptimalOrdersResult> optimalOrders, Message message) {
+        List<SendMessage> messageList = new LinkedList<>();
+        for (OptimalOrdersResult order : optimalOrders) {
+            List<String> ordersResponse = createOrdersResponse(order);
+            for (String stringMessage : ordersResponse) {
+                SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+                sendMessage.enableMarkdown(true);
+                sendMessage.setText(stringMessage);
+                messageList.add(sendMessage);
+            }
+        }
+        return messageList;
     }
 
     private String createPriceResponse(List<RateDto> rates) {
@@ -362,21 +367,28 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         return result;
     }
 
-    private String createOrdersResponse(OptimalOrdersResult optimalOrders) {
+    private List<String> createOrdersResponse(OptimalOrdersResult optimalOrders) {
+        List<String> stringMessages = new LinkedList<>();
         StringBuilder builder = new StringBuilder();
         Currency sell = optimalOrders.getPair().getSellCurrency();
         Currency buy = optimalOrders.getPair().getBuyCurrency();
+        List<OptimalOrderDto> orderList = optimalOrders.getOptimalOrders();
 //        builder.append("*");
         builder.append("You sell *");
         builder.append(optimalOrders.getAmountSell().toPlainString()).append(sell);
         builder.append("*\nYou buy *");
         builder.append(optimalOrders.getAmountBuy().toPlainString()).append(buy);
+        builder.append("*\nFirst rate *").append(orderList.get(0).getRate());
         builder.append("*\nAverage rate *").append(optimalOrders.getAverageRate());
+        builder.append("*\nLast rate *").append(orderList.get(orderList.size() - 1).getRate());
         builder.append("*\n\n");
+        stringMessages.add(builder.toString());
 
-        builder.append("*Rate* -> *Amount to sell* -> *Amount to buy* => *Trade platform*\n");
-        if (optimalOrders.getOptimalOrders().size() < MAX_ORDERS_IN_MESSAGE) {
-            for (OptimalOrderDto order : optimalOrders.getOptimalOrders()) {
+        List<List<OptimalOrderDto>> partition = Lists.partition(orderList, MAX_ORDERS_IN_MESSAGE);
+        for (List<OptimalOrderDto> part : partition) {
+            builder = new StringBuilder();
+            builder.append("*Rate* -> *Amount to sell* -> *Amount to buy* => *Trade platform*\n");
+            for (OptimalOrderDto order : part) {
                 builder.append(order.getRate().stripTrailingZeros().toPlainString());
                 builder.append(" -> ");
                 builder.append(order.getAmountToSale().stripTrailingZeros().toPlainString()).append(sell);
@@ -384,23 +396,11 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 builder.append(order.getAmountToBuy().stripTrailingZeros().toPlainString()).append(buy);
                 builder.append(" => *").append(order.getMarketplace()).append("*\n");
             }
-        } else {
-            for (int i = 0; i < MAX_ORDERS_IN_MESSAGE; i++) {
-                OptimalOrderDto order = optimalOrders.getOptimalOrders().get(i);
-                builder.append(order.getRate().stripTrailingZeros().toPlainString());
-                builder.append(" -> ");
-                builder.append(order.getAmountToSale().stripTrailingZeros().toPlainString()).append(sell);
-                builder.append(" -> ");
-                builder.append(order.getAmountToBuy().stripTrailingZeros().toPlainString()).append(buy);
-                builder.append(" => *").append(order.getMarketplace()).append("*\n");
-            }
-
-            builder.append("\n\nThere are ").append(optimalOrders.getOptimalOrders().size() - MAX_ORDERS_IN_MESSAGE);
-            builder.append(" another orders");
+            stringMessages.add(builder.toString());
         }
+        log.info("Created {} messages from {} orders", stringMessages.size(), orderList.size());
 
-
-        return builder.toString();
+        return stringMessages;
     }
 
     private void clearHistory(Long chatId) {
