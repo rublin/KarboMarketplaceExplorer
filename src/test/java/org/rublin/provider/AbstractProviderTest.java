@@ -36,6 +36,10 @@ public class AbstractProviderTest {
     @Qualifier("crex")
     protected Marketplace crexMarketplace;
 
+    @Autowired
+    @Qualifier("kuna")
+    protected Marketplace kunaMarketplace;
+
     protected void orderTest(Marketplace marketplace) {
         for (OrderResponseDto orderResponse : marketplace.trades()) {
             PairDto pair = orderResponse.getPair();

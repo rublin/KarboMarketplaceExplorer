@@ -44,6 +44,10 @@ public class MarketplaceServiceImpl implements MarketplaceService {
     @Qualifier("crex")
     protected Marketplace crexMarketplace;
 
+    @Autowired
+    @Qualifier("kuna")
+    protected Marketplace kunaMarketplace;
+
     private Map<TradePlatform, List<OrderResponseDto>> marketplaceCache = new ConcurrentHashMap<>();
     private List<Marketplace> marketplaces;
     private ExecutorService executorService;
@@ -107,6 +111,7 @@ public class MarketplaceServiceImpl implements MarketplaceService {
         marketplaces = Arrays.asList(cryptopiaMarketplace,
                 livecoinMarketplace,
                 btcTradeMarketplace,
+                kunaMarketplace,
                 tradeogreMarketplace,
                 crexMarketplace);
 
