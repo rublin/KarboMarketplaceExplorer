@@ -6,5 +6,6 @@ public enum TradePlatform {
     LIVECOIN,
     TRADEOGRE,
     CREX_24,
-    KUNA
+    KUNA,
+    RICHAMSTER
 }

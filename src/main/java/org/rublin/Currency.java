@@ -8,6 +8,10 @@ public enum Currency {
     BCH,
     LTC,
     DOGE,
+    ETH,
+    ADA,
+    XEM,
+    WAVES,
     RUR;
 
     public static Currency getCurrency(String currency) {
