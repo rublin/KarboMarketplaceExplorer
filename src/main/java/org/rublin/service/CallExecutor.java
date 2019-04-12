@@ -11,7 +11,7 @@ import java.io.IOException;
 @Component
 public class CallExecutor {
     public  <T> T execute(Call call) {
-        log.info(call.request().tag().toString());
+        log.info(call.request().toString());
         try {
             Response response = call.execute();
             if (response.isSuccessful()) {

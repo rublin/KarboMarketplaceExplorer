@@ -190,8 +190,8 @@ public class BtcTradeMarketplace extends AbstractMarketplace {
     }
     private Optional<TradesBuyPair> tradeOrders(String pairString, boolean buy) {
         String url = buy ?
-                BTC_TRADE_URL.concat("sell/").concat(pairString) :
-                BTC_TRADE_URL.concat("buy/").concat(pairString);
+                BTC_TRADE_URL.concat("sell/").concat(pairString.toLowerCase()) :
+                BTC_TRADE_URL.concat("buy/").concat(pairString.toLowerCase());
         RestTemplate template = new RestTemplate();
         TradesBuyPair btcTradeResult = null;
         int count = 0;
