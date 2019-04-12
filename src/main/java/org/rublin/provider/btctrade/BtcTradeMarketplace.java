@@ -190,17 +190,17 @@ public class BtcTradeMarketplace extends AbstractMarketplace {
     }
     private Optional<TradesBuyPair> tradeOrders(String pairString, boolean buy) {
         String url = buy ?
-                BTC_TRADE_URL.concat("sell/").concat(pairString) :
-                BTC_TRADE_URL.concat("buy/").concat(pairString);
+                BTC_TRADE_URL.concat("sell/").concat(pairString.toLowerCase()) :
+                BTC_TRADE_URL.concat("buy/").concat(pairString.toLowerCase());
         RestTemplate template = new RestTemplate();
         TradesBuyPair btcTradeResult = null;
         int count = 0;
-        while (Objects.isNull(btcTradeResult) && count < 3) {
+        while (Objects.isNull(btcTradeResult) || Objects.isNull(btcTradeResult.getTrades()) && count < 3) {
             try {
-                log.info("Send {} req", url);
+                log.info("Try to send BTC_TRADE {} req", url);
                 btcTradeResult = template.getForObject(url, TradesBuyPair.class);
             } catch (Throwable e) {
-                log.warn("{} error", e.getMessage());
+                log.warn("BTC_TRADE send error: {}", e.getMessage());
                 count++;
                 try {
                     Thread.sleep(1000);

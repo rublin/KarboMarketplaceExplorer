@@ -48,9 +48,14 @@ public class MarketplaceServiceImpl implements MarketplaceService {
     @Qualifier("kuna")
     protected Marketplace kunaMarketplace;
 
+    @Autowired
+    @Qualifier("richamster")
+    protected Marketplace richamsterMarketplace;
+
     private Map<TradePlatform, List<OrderResponseDto>> marketplaceCache = new ConcurrentHashMap<>();
     private List<Marketplace> marketplaces;
     private ExecutorService executorService;
+    private ScheduledThreadPoolExecutor delayedThreadPool;
 
     @Override
     public void createCache() {
@@ -99,10 +104,8 @@ public class MarketplaceServiceImpl implements MarketplaceService {
     }
 
     private  <T> CompletableFuture<T> timeoutAfter(long timeout, TimeUnit unit) {
-        ScheduledThreadPoolExecutor delayer = new ScheduledThreadPoolExecutor(1);
-
-        CompletableFuture<T> result = new CompletableFuture<>();
-        delayer.schedule(() -> result.completeExceptionally(new TimeoutException("Timeout after " + timeout)), timeout, unit);
+                CompletableFuture<T> result = new CompletableFuture<>();
+        delayedThreadPool.schedule(() -> result.completeExceptionally(new TimeoutException("Timeout after " + timeout)), timeout, unit);
         return result;
     }
 
@@ -112,9 +115,15 @@ public class MarketplaceServiceImpl implements MarketplaceService {
                 livecoinMarketplace,
                 btcTradeMarketplace,
                 kunaMarketplace,
+                richamsterMarketplace,
                 tradeogreMarketplace,
                 crexMarketplace);
 
-        executorService = Executors.newFixedThreadPool(marketplaces.size());
+        delayedThreadPool = new ScheduledThreadPoolExecutor(marketplaces.size());
+        executorService = Executors.newFixedThreadPool(marketplaces.size(), r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setDaemon(true);
+            return t;
+        });
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
@@ -23,9 +23,9 @@ public class ScheduleServiceTest {
     public void updateCache() {
         scheduleService.updateCache();
         int threadCount = Thread.activeCount();
-        for (int i = 0; i <= 3; i++)
+        for (int i = 0; i <= 5; i++)
             scheduleService.updateCache();
         int threadNewCount = Thread.activeCount();
-        assertTrue(String.format("Old thread count is %d; new thread count is %d", threadCount, threadNewCount), threadNewCount - threadCount < 5);
+        assertEquals(String.format("Old thread count is %d; new thread count is %d", threadCount, threadNewCount), threadNewCount, threadCount );
     }
 }
