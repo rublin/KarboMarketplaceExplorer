@@ -341,9 +341,9 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         for (RateDto rate : sorted) {
             builder.append(rate.getTarget())
                     .append(": ")
-                    .append(rate.getSaleRate().stripTrailingZeros())
-                    .append(" ")
-                    .append(rate.getBuyRate().stripTrailingZeros())
+                    .append(rate.getSaleRate().stripTrailingZeros().toPlainString())
+                    .append("  ||  ")
+                    .append(rate.getBuyRate().stripTrailingZeros().toPlainString())
                     .append("  ")
 //                    .append(rate.getMarketplace())
 //                    .append("* ")
