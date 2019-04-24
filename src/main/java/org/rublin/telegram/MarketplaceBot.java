@@ -4,7 +4,11 @@ import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.rublin.Currency;
 import org.rublin.TradePlatform;
-import org.rublin.dto.*;
+import org.rublin.dto.OptimalOrderDto;
+import org.rublin.dto.OptimalOrdersResult;
+import org.rublin.dto.PairDto;
+import org.rublin.dto.RateDto;
+import org.rublin.dto.RateResponseDto;
 import org.rublin.model.TelegramUser;
 import org.rublin.provider.FiatRate;
 import org.rublin.repository.TelegramUserRepository;
@@ -15,19 +19,28 @@ import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.User;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboard;
-import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
+import static org.rublin.telegram.BotCommands.INFO;
+import static org.rublin.telegram.BotCommands.NOTIFY;
+import static org.rublin.telegram.TelegramKeyboardFactory.currencyKeyboard;
+import static org.rublin.telegram.TelegramKeyboardFactory.defaultKeyboard;
 
 @Slf4j
 public class MarketplaceBot extends TelegramLongPollingBot {
@@ -63,8 +76,8 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         });
     }
 
-    public int sendCustomMessage(String message) {
-        int count = 0;
+    public List<SendMessage> sendCustomMessage(String message) {
+        List<SendMessage> messages = new ArrayList<>();
         for (ConcurrentMap.Entry entry : chatToUser.entrySet()) {
             Long chatId = (Long) entry.getKey();
             TelegramUser user = (TelegramUser) entry.getValue();
@@ -72,18 +85,23 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             SendMessage sendMessage = createSendMessage(chatId);
             sendMessage.enableMarkdown(true);
             sendMessage.setText(String.format("Hi, *%s*!\n\n%s", name, message));
-            doExecute(Collections.singletonList(sendMessage));
-            count++;
+//            For test purpose only
+//            if (chatId == 241931659)
+//                messages.add(sendMessage);
         }
-        return count;
+        return messages;
     }
 
     private void doExecute(List<SendMessage> messages) {
         messages.forEach(m -> {
             try {
                 execute(m);
+                Thread.sleep(100);
+                log.debug("Successfully sent message to {}", m.getChatId());
             } catch (TelegramApiException e) {
                 log.error("Execute error {}", e);
+            } catch (InterruptedException e) {
+                log.error("Sleep failed: {}", e.getMessage());
             }
         });
     }
@@ -95,9 +113,10 @@ public class MarketplaceBot extends TelegramLongPollingBot {
             try {
                 if (update.hasMessage()) {
                     Message message = update.getMessage();
-                    processUserInformation(message.getChatId(), message.getFrom());
+                    log.debug("Received message from {} with text: {}", message.getFrom().getId(), message.getText());
+                    TelegramUser telegramUser = processUserInformation(message.getChatId(), message.getFrom());
                     if (message.hasText() || message.hasLocation()) {
-                        handleIncomingMessage(message);
+                        handleIncomingMessage(message, telegramUser.isAdmin());
                     }
                 }
             } catch (Exception e) {
@@ -107,7 +126,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         }
     }
 
-    private void processUserInformation(Long chatId, User user) {
+    private TelegramUser processUserInformation(Long chatId, User user) {
         Integer id = user.getId();
         TelegramUser userFromMap = usersById.getOrDefault(id, null);
         if (Objects.isNull(userFromMap)) {
@@ -119,8 +138,8 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                     .chatId(chatId)
                     .build();
             log.info("Try to save new user {}", user);
-            TelegramUser save = repository.save(telegramUser);
-            log.info("User saved {}", save);
+            userFromMap = repository.save(telegramUser);
+            log.info("User saved {}", userFromMap);
             usersById.putIfAbsent(id, telegramUser);
             chatToUser.putIfAbsent(chatId, telegramUser);
         }
@@ -130,9 +149,10 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         } else {
             statistic.put(id, ++count);
         }
+        return userFromMap;
     }
 
-    private void handleIncomingMessage(Message message) throws TelegramApiException {
+    private void handleIncomingMessage(Message message, boolean admin) throws TelegramApiException {
         log.info("Telegram bot received message {} from {}", message.getText(), message.getFrom());
 
         String text = message.getText().toUpperCase();
@@ -140,18 +160,33 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         LinkedList<BotCommands> commands = commandsHistory.get(message.getChatId());
         BotCommands previousCommand = Objects.nonNull(commands) && !commands.isEmpty() ? commands.getLast() : null;
 
+        CommunicationDto communicationDto = CommunicationDto.builder()
+                .admin(admin)
+                .chatId(message.getChatId())
+                .messageId(message.getMessageId())
+                .text(message.getText())
+                .from(message.getFrom())
+                .build();
         Currency currency = Currency.getCurrency(text);
-        if (text.equals("/START")) {
-            messageList.add(start(message));
-        } else if (text.equals(BotCommands.INFO.name())) {
-            messageList.add(info(message));
-        } else if (text.equals(BotCommands.PRICE.name())) {
+        if (text.equalsIgnoreCase("/START")) {
+            messageList.add(start(communicationDto));
+        } else if (text.equalsIgnoreCase(INFO.getCommand())) {
+            messageList.add(info(communicationDto));
+        } else if (text.equalsIgnoreCase(NOTIFY.getCommand())) {
+            addTOHistory(message.getChatId(), NOTIFY);
+            SendMessage sendMessage = createSendMessage(message.getChatId());
+            sendMessage.setText("Type your message. It will receive each bot user");
+            messageList.add(sendMessage);
+        } else if (previousCommand == NOTIFY) {
+            messageList.addAll(sendCustomMessage(message.getText()));
+            clearHistory(message.getChatId());
+        } else if (text.equalsIgnoreCase(BotCommands.PRICE.name())) {
             addTOHistory(message.getChatId(), BotCommands.PRICE);
-            messageList.add(price(message));
-        } else if (text.equals(BotCommands.BUY.name())) {
+            messageList.add(price(communicationDto));
+        } else if (text.equalsIgnoreCase(BotCommands.BUY.name())) {
             addTOHistory(message.getChatId(), BotCommands.BUY);
             messageList.add(buyCommand(message));
-        } else if (text.equals(BotCommands.SELL.name())) {
+        } else if (text.equalsIgnoreCase(BotCommands.SELL.name())) {
             addTOHistory(message.getChatId(), BotCommands.SELL);
             messageList.add(sellCommand(message));
         } else if (Objects.nonNull(currency)
@@ -172,7 +207,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                 Optional<BigDecimal> amountOpt = getAmount(text);
                 if (amountOpt.isPresent()) {
                     BigDecimal amount = amountOpt.get();
-                    messageList.addAll(buyCommand(message, amount, toCurrency));
+                    messageList.addAll(buyCommand(communicationDto, amount, toCurrency));
                     if (toCurrency == Currency.UAH) {
                         RateDto rate = privatRate.rate(PairDto.builder()
                                 .sellCurrency(Currency.UAH)
@@ -180,7 +215,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                                 .build());
                         if (Objects.nonNull(rate)) {
                             amount = amount.divide(rate.getBuyRate(), BigDecimal.ROUND_HALF_UP);
-                            messageList.addAll(buyCommand(message, amount, Currency.USD));
+                            messageList.addAll(buyCommand(communicationDto, amount, Currency.USD));
                         }
                     } else if (toCurrency == Currency.USD) {
                         RateDto rate = privatRate.rate(PairDto.builder()
@@ -189,30 +224,30 @@ public class MarketplaceBot extends TelegramLongPollingBot {
                                 .build());
                         if (Objects.nonNull(rate)) {
                             amount = amount.multiply(rate.getSaleRate());
-                            messageList.addAll(buyCommand(message, amount, Currency.UAH));
+                            messageList.addAll(buyCommand(communicationDto, amount, Currency.UAH));
                         }
                     }
                 } else {
-                    messageList.add(amountError(message));
+                    messageList.add(amountError(communicationDto));
                 }
 
                 clearHistory(message.getChatId());
             } else if (Objects.nonNull(previousCommand) && previousCommand.toString().startsWith("SELL_FOR_")) {
                 String currencyStr = previousCommand.toString().substring(9);
                 log.info("Received SELL request for {} currency and {} amount", currencyStr, text);
-                messageList.addAll(sellCommand(message, Currency.valueOf(currencyStr)));
+                messageList.addAll(sellCommand(communicationDto, Currency.valueOf(currencyStr)));
                 clearHistory(message.getChatId());
             } else {
                 clearHistory(message.getChatId());
-                messageList.add(defaultCommand(message));
+                messageList.add(defaultCommand(communicationDto));
             }
         }
 
         doExecute(messageList);
     }
 
-    private SendMessage amountError(Message message) {
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+    private SendMessage amountError(CommunicationDto message) {
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard(message.isAdmin()));
         sendMessage.setText("Amount format is wrong. Please, use only digitals and . as a separator");
         return sendMessage;
     }
@@ -228,8 +263,8 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         return Optional.ofNullable(amount);
     }
 
-    private SendMessage info(Message message) {
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+    private SendMessage info(CommunicationDto message) {
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard(message.isAdmin()));
         StringBuilder builder = new StringBuilder();
         builder.append("*Price* will return [Karbo](https://karbo.io) price to other currencies\n");
         builder.append("*Sell* will return optimal sell orders\n");
@@ -242,8 +277,8 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         return sendMessage;
     }
 
-    private SendMessage start(Message message) {
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+    private SendMessage start(CommunicationDto message) {
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard(message.isAdmin()));
         sendMessage.enableMarkdown(true);
         StringBuilder builder = new StringBuilder();
         builder.append("Hello, *").append(getContact(message.getFrom())).append("*\n\n");
@@ -280,7 +315,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         return "anonymous user";
     }
 
-    private List<SendMessage> buyCommand(Message message, BigDecimal amount, Currency currency) {
+    private List<SendMessage> buyCommand(CommunicationDto message, BigDecimal amount, Currency currency) {
         try {
 //            BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
             List<OptimalOrdersResult> optimalOrders = orderService.findOptimalOrders(PairDto.builder()
@@ -293,13 +328,13 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         } catch (Exception e) {
             log.warn("Unexpected exception {}", e.getMessage());
             log.debug("Exception {}", e);
-            SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+            SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard(message.isAdmin()));
             sendMessage.setText("Something wrong, try again");
             return Collections.singletonList(sendMessage);
         }
     }
 
-    private List<SendMessage> sellCommand(Message message, Currency currency) {
+    private List<SendMessage> sellCommand(CommunicationDto message, Currency currency) {
         String text = message.getText();
         try {
             BigDecimal amount = BigDecimal.valueOf(Double.valueOf(text));
@@ -312,18 +347,18 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         } catch (Exception e) {
             log.warn("Unexpected exception {}", e.getMessage());
             log.debug("Exception {}", e);
-            SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+            SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard(message.isAdmin()));
             sendMessage.setText("Something wrong, try again");
             return Collections.singletonList(sendMessage);
         }
     }
 
-    private List<SendMessage> splitAndPrepare(List<OptimalOrdersResult> optimalOrders, Message message) {
+    private List<SendMessage> splitAndPrepare(List<OptimalOrdersResult> optimalOrders, CommunicationDto message) {
         List<SendMessage> messageList = new LinkedList<>();
         for (OptimalOrdersResult order : optimalOrders) {
             List<String> ordersResponse = createOrdersResponse(order);
             for (String stringMessage : ordersResponse) {
-                SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+                SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard(message.isAdmin()));
                 sendMessage.enableMarkdown(true);
                 sendMessage.setText(stringMessage);
                 messageList.add(sendMessage);
@@ -428,10 +463,7 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private SendMessage sellCommand(Message message) {
         SendMessage sendMessage = createSendMessage(message.getChatId(),
                 message.getMessageId(),
-                currencyKeyboard(Currency.BTC,
-                        Currency.UAH,
-                        Currency.RUR,
-                        Currency.USD));
+                currencyKeyboard());
         sendMessage.setText("Select currency what you want to convert with Karbo");
 
         return sendMessage;
@@ -440,48 +472,21 @@ public class MarketplaceBot extends TelegramLongPollingBot {
     private SendMessage buyCommand(Message message) {
         SendMessage sendMessage = createSendMessage(message.getChatId(),
                 message.getMessageId(),
-                currencyKeyboard(Currency.BTC,
-                        Currency.UAH,
-                        Currency.RUR,
-                        Currency.USD));
+                currencyKeyboard());
         sendMessage.setText("Select currency what you want to convert with Karbo");
 
         return sendMessage;
     }
 
-    private ReplyKeyboard currencyKeyboard(Currency... currencies) {
-        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-        keyboardMarkup.setSelective(true);
-        keyboardMarkup.setResizeKeyboard(true);
-        keyboardMarkup.setOneTimeKeyboard(true);
-
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow row = new KeyboardRow();
-        for (Currency currency : currencies) {
-            KeyboardButton button = new KeyboardButton();
-            button.setText(currency.name());
-            row.add(button);
-        }
-
-        // Add the first row to the keyboard
-        keyboard.add(row);
-        // Create another keyboard row
-        row = new KeyboardRow();
-        keyboard.add(row);
-        // Set the keyboard to the markup
-        keyboardMarkup.setKeyboard(keyboard);
-        return keyboardMarkup;
-    }
-
-    private SendMessage price(Message message) {
-        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+    private SendMessage price(CommunicationDto message) {
+        SendMessage sendMessage = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard(message.isAdmin()));
         RateResponseDto rates = rateService.getCurrentRate();
         sendMessage.setText(createPriceResponse(rates));
         return sendMessage;
     }
 
-    private SendMessage defaultCommand(Message message) {
-        SendMessage sm = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard());
+    private SendMessage defaultCommand(CommunicationDto message) {
+        SendMessage sm = createSendMessage(message.getChatId(), message.getMessageId(), defaultKeyboard(message.isAdmin()));
         sm.setText("Unsupported command");
 
         return sm;
@@ -499,29 +504,6 @@ public class MarketplaceBot extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         return message;
-    }
-
-    private ReplyKeyboardMarkup defaultKeyboard() {
-        // Create ReplyKeyboardMarkup object
-        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-        keyboardMarkup.setSelective(true);
-        keyboardMarkup.setResizeKeyboard(true);
-        // Create the keyboard (list of keyboard rows)
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        // Create a keyboard row
-        KeyboardRow row = new KeyboardRow();
-        row.add("Sell");
-        row.add("Price");
-        row.add("Buy");
-        // Add the first row to the keyboard
-        keyboard.add(row);
-        row = new KeyboardRow();
-        row.add("Info");
-        keyboard.add(row);
-        // Set the keyboard to the markup
-        keyboardMarkup.setKeyboard(keyboard);
-        // Add it to the message
-        return keyboardMarkup;
     }
 
     @Override

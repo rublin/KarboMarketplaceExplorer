@@ -39,10 +39,6 @@ public class TelegramBotService {
 
     private TelegramBotsApi telegramBotsApi;
 
-    public int sendMessage(String message) {
-        return bot.sendCustomMessage(message);
-    }
-
     @PostConstruct
     public void registerBot() {
         ApiContextInitializer.init();
