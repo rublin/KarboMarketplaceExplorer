@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 
+import java.util.Objects;
+
 @Data
 @Builder
 public class TelegramUser {
@@ -13,4 +15,9 @@ public class TelegramUser {
     private String lastName;
     private String userName;
     private long chatId;
+    private Boolean admin;
+
+    public boolean isAdmin() {
+        return Objects.nonNull(admin) && admin;
+    }
 }

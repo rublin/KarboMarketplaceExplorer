@@ -27,7 +27,6 @@ public class ScheduleService {
                 "*donate.rublin.org* or\n" +
                 "*KaAxHCPtJaFGDq4xLn3fASf3zVrAmqyE4359zn3r3deVjCeM3CYq7K4Y1pkfZkjfRd1W2VPXVZdA5RBdpc4Vzamo1H4F5qZ*";
         log.info("Ask for donation: \n {}", message);
-        botService.sendMessage(message);
     }
 
     @Scheduled(fixedDelay = 120000)
