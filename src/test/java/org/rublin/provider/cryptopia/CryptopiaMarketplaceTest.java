@@ -1,5 +1,6 @@
 package org.rublin.provider.cryptopia;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.rublin.TradePlatform;
 import org.rublin.model.CryptorpiaPairsEntity;
@@ -9,6 +10,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
+@Ignore
 public class CryptopiaMarketplaceTest {
     Marketplace marketplace = new CryptopiaMarketplace(pairs());
 
